@@ -35,7 +35,7 @@ export function computeFit(sizes: SizeSpec[], stretch: Stretch, heightCm: number
   const tol = STRETCH_TOL[stretch];
   const target = { chest: body.chest + EASE[pref], shoulders: body.shoulders + (pref === "oversize" ? 4 : pref === "standard" ? 1.5 : 0) };
   const ranked = sizes.map((s) => ({ s, sc: score(s, target.chest, target.shoulders, tol) })).sort((a, b) => b.sc - a.sc);
-  const ideal = ranked[0];
+  const ideal = ranked[0]!;
   const explanation = [
     `Poitrine estimée ${body.chest} cm + aisance ${pref} ${EASE[pref]} cm = cible ${target.chest} cm`,
     `Épaules estimées ${body.shoulders} cm, tolérance stretch ${stretch} ±${tol} cm`,
