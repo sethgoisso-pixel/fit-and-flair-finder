@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { computeFit } from "./fit";
 import { PRODUCTS } from "./products";
 
-const denim = PRODUCTS[0].sizes;
+const denim = PRODUCTS[0]!.sizes;
 
 describe("computeFit", () => {
   it("validates an in-stock ideal size as PERFECT_MATCH", () => {
-    const r = computeFit(PRODUCTS[1].sizes, "faible", 182, 80, "standard");
+    const r = computeFit(PRODUCTS[1]!.sizes, "faible", 182, 80, "standard");
     expect(r.status).toBe("PERFECT_MATCH");
     expect(r.size).toBe("M");
   });
