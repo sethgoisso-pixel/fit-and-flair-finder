@@ -61,8 +61,8 @@ function Index() {
       </header>
 
       <section className="mx-auto max-w-7xl px-5 pb-10 pt-16 sm:pt-24">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">YouCam VTO × OmniFit Analytics</p>
-        <h1 className="mt-4 max-w-4xl font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl">Essayez. Ajustez.<br /><span className="text-muted-foreground">Ne retournez plus.</span></h1>
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">YouCam VTO × OmniFit Analytics</p>
+        <h1 className="mt-4 max-w-4xl font-display text-5xl font-normal leading-[1.02] sm:text-7xl">Essayez. Ajustez.<br /><em className="text-muted-foreground">Ne retournez plus.</em></h1>
         <p className="mt-6 max-w-xl text-muted-foreground">Essayage virtuel par IA et moteur morphologique explicable qui croise votre silhouette, la tolérance de coupe et le stock réel.</p>
         <button onClick={() => setB2b(true)} className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:hidden"><TrendingDown className="h-3.5 w-3.5 text-primary" />B2B Impact</button>
       </section>
