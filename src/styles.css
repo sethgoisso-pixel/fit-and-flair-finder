@@ -61,9 +61,9 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --font-display: "Archivo", sans-serif;
-  --font-sans: "Inter Tight", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Bodoni Moda", serif;
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: "Manrope", sans-serif;
 }
 
 :root {
