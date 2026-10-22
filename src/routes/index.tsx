@@ -52,24 +52,37 @@ function Index() {
     return true;
   });
 
-  return (
-    <div className="min-h-screen bg-background text-foreground antialiased">
-      {/* Barre de navigation haute */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <div className="font-display text-xl tracking-tight">OMNIFIT<span className="text-primary">.AI</span></div>
-          <div className="flex items-center gap-2">
+    return (
+    <div className="min-h-screen bg-background text-foreground antialiased relative overflow-hidden selection:bg-sky-200">
+      {/* Halos de lumière simulant un ciel nuageux vaporeux */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-[550px] w-[850px] rounded-full bg-gradient-to-b from-sky-200/60 via-blue-100/35 to-transparent blur-3xl" />
+        <div className="absolute top-[35%] -left-32 h-[450px] w-[500px] rounded-full bg-sky-200/35 blur-3xl" />
+        <div className="absolute top-[60%] -right-32 h-[500px] w-[550px] rounded-full bg-blue-100/40 blur-3xl" />
+      </div>
+
+      {/* Barre de navigation haute flottante en verre dépoli */}
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="font-display text-2xl font-extrabold tracking-tight">
+            OMNIFIT<span className="text-primary font-normal">.AI</span>
+          </div>
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => setB2b(true)} 
-              className="hidden rounded-full border border-border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground sm:inline-flex items-center gap-2 transition-colors hover:border-primary/50"
+              className="hidden rounded-full border border-border/80 bg-white/60 px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground sm:inline-flex items-center gap-2 transition-all hover:border-primary/50 hover:bg-white shadow-sm"
             >
               <TrendingDown className="h-3.5 w-3.5 text-primary" />
               Impact Marchand B2B
             </button>
-            <button onClick={() => setCartOpen(true)} aria-label="Panier" className="relative rounded-full border border-border p-2 hover:bg-secondary">
+            <button 
+              onClick={() => setCartOpen(true)} 
+              aria-label="Panier" 
+              className="relative rounded-full border border-border/80 bg-white/70 p-2.5 shadow-sm hover:bg-white transition-all"
+            >
               <ShoppingBag className="h-4 w-4" />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm">
                   {count}
                 </span>
               )}
@@ -78,27 +91,29 @@ function Index() {
         </div>
       </header>
 
-      {/* Bannière de présentation */}
-      <section className="mx-auto max-w-7xl px-5 pt-12 pb-8 sm:pt-16 sm:pb-12 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs text-primary font-mono mb-4">
-          <Sparkles className="h-3.5 w-3.5" />
+      {/* Bannière de présentation aérienne */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-14 pb-10 sm:pt-20 sm:pb-14 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/60 bg-sky-100/70 px-4 py-1.5 text-xs text-sky-800 font-semibold mb-5 shadow-sm backdrop-blur-sm">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
           Moteur VTO YouCam API & Sizing Prédictif
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl font-light tracking-tight max-w-3xl mx-auto leading-tight">
+        <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl mx-auto leading-[1.08] text-slate-900">
           La vérité morphologique avant l'achat.
         </h1>
-        <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto font-light">
+        <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
           Visualisez le vêtement sur votre silhouette grâce à l'IA YouCam et éliminez les erreurs de taille avec notre analyseur de tension biomécanique.
         </p>
 
-        {/* Filtres de genre */}
-        <div className="mt-8 flex justify-center gap-2">
+        {/* Filtres de genre en pilules */}
+        <div className="mt-8 flex justify-center gap-2.5">
           {(["tous", "femme", "homme"] as const).map((g) => (
             <button
               key={g}
               onClick={() => setFilter(g)}
-              className={`rounded-full px-4 py-1.5 text-xs font-mono uppercase tracking-wider transition-all ${
-                filter === g ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20" : "border border-border text-muted-foreground hover:text-foreground"
+              className={`rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-all shadow-sm ${
+                filter === g 
+                  ? "bg-primary text-primary-foreground font-bold shadow-md shadow-sky-500/25 scale-105" 
+                  : "border border-border/80 bg-white/60 text-slate-600 hover:text-slate-900 hover:bg-white"
               }`}
             >
               {g}
@@ -107,29 +122,36 @@ function Index() {
         </div>
       </section>
 
-      {/* Grille de produits */}
-      <main className="mx-auto max-w-7xl px-5 pb-24">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Grille de produits aux cartes bento galbées */}
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24">
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <div key={p.id} className="group relative flex flex-col rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all duration-300">
-              <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-                <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground backdrop-blur">
+            <div 
+              key={p.id} 
+              className="group relative flex flex-col rounded-3xl border border-white/80 bg-card/90 backdrop-blur-md p-3.5 shadow-sm hover:shadow-xl hover:shadow-sky-200/50 hover:-translate-y-1.5 transition-all duration-300"
+            >
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-secondary/50">
+                <img 
+                  src={p.image} 
+                  alt={p.name} 
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
+                <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm backdrop-blur">
                   {p.gender} · {p.category.replace("_", " ")}
                 </span>
-                <span className="absolute right-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-xs font-mono font-medium backdrop-blur">
+                <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-900 shadow-sm backdrop-blur">
                   {p.price} €
                 </span>
               </div>
 
-              <div className="flex flex-1 flex-col p-5">
-                <h3 className="font-display text-lg tracking-tight">{p.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground font-light">{p.description}</p>
+              <div className="flex flex-1 flex-col p-4 pt-5">
+                <h3 className="font-display text-xl font-bold tracking-tight text-slate-900">{p.name}</h3>
+                <p className="mt-1.5 text-xs text-slate-500 font-normal leading-relaxed">{p.description}</p>
 
-                <div className="mt-auto pt-5">
+                <div className="mt-auto pt-6">
                   <button
                     onClick={() => setActiveProduct(p)}
-                    className="w-full rounded-xl bg-primary py-3 text-xs font-semibold text-primary-foreground tracking-wide hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10"
+                    className="w-full rounded-2xl bg-primary py-3.5 text-xs font-bold text-primary-foreground tracking-wide hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-500/25"
                   >
                     <Sparkles className="h-4 w-4" />
                     Essayer virtuellement
