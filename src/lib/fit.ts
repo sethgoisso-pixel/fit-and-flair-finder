@@ -49,23 +49,24 @@ export function analyzeTension(
   const realEase = spec.chest - body.chest;
   const delta = realEase - targetEase;
 
-  let status: "optimal" | "tight" | "loose" = "optimal";
-  let label = "Ajustement idéal";
+    let status: "optimal" | "tight" | "loose" = "optimal";
+  let label = "Optimal fit";
   let risk = 3;
 
   if (delta < -tol) {
     status = "tight";
-    label = `Tension forte (${Math.abs(delta)} cm sous l'aisance voulue)`;
+    label = `High tension (${Math.abs(delta)} cm below target ease)`;
     risk = Math.min(85, 25 + Math.abs(delta) * 12);
   } else if (delta > tol * 1.8) {
     status = "loose";
-    label = `Coupe trop lâche (+${Math.round(delta)} cm d'excédent)`;
+    label = `Loose drape (+${Math.round(delta)} cm excess fabric)`;
     risk = Math.min(65, 15 + Math.round(delta) * 7);
   } else {
     status = "optimal";
-    label = `Aisance parfaite (+${realEase} cm au buste)`;
+    label = `Perfect ease (+${realEase} cm chest ease)`;
     risk = Math.max(2, Math.round(Math.abs(delta) * 2));
   }
+
 
   return {
     size: spec.size,
