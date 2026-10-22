@@ -2,17 +2,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ShoppingBag, Sparkles, X, Upload, TrendingDown, Ruler, Check, AlertTriangle, Shuffle } from "lucide-react";
+import { ShoppingBag, Sparkles, X, Upload, TrendingDown, Check, AlertTriangle } from "lucide-react";
 import { PRODUCTS, type Product } from "@/lib/products";
 import { computeFit, type FitPref } from "@/lib/fit";
 import { startYoucamCloth, pollYoucamCloth } from "@/lib/youcam.functions";
 import modelImg from "@/assets/model.jpg";
+import modelFemme from "@/assets/model-femme.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "OmniFit AI — Essayage virtuel & taille parfaite" },
-      { name: "description", content: "Mode techwear avec essayage virtuel YouCam et moteur anti-retour OmniFit Analytics." },
+      { name: "description", content: "Mode homme et femme avec essayage virtuel YouCam réel et taille recommandée automatiquement." },
       { property: "og:title", content: "OmniFit AI — Essayage virtuel & taille parfaite" },
       { property: "og:description", content: "Essayez virtuellement, recevez la bonne taille, réduisez les retours." },
       { property: "og:type", content: "website" },
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/")({
 type CartItem = { id: string; name: string; size: string; price: number; image: string; qty: number };
 
 function Index() {
-  const [active, setActive] = useState<Product | null>(null);
+  const [filter, setFilter] = useState<"tous" | "femme" | "homme">("tous");
   const [vto, setVto] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -64,30 +65,30 @@ function Index() {
         <button onClick={() => setB2b(true)} className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:hidden"><TrendingDown className="h-3.5 w-3.5 text-primary" />B2B Impact</button>
       </section>
 
+      <div className="mx-auto flex max-w-7xl gap-2 px-5 pb-6">
+        {(["tous", "femme", "homme"] as const).map((g) => (
+          <button key={g} onClick={() => setFilter(g)} className={`rounded-full border px-4 py-1.5 text-sm capitalize ${filter === g ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}>{g}</button>
+        ))}
+      </div>
       <main className="mx-auto grid max-w-7xl gap-6 px-5 pb-24 sm:grid-cols-2 lg:grid-cols-3">
-        {PRODUCTS.map((p, i) => (
-          <article key={p.id} className="group animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${i * 120}ms`, animationFillMode: "both" }}>
-            <button onClick={() => setActive(p)} className="relative block w-full overflow-hidden rounded-lg bg-card">
+        {PRODUCTS.filter((p) => filter === "tous" || p.gender === filter).map((p, i) => (
+          <article key={p.id} className="group animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${i * 100}ms`, animationFillMode: "both" }}>
+            <button onClick={() => setVto(p)} className="relative block w-full overflow-hidden rounded-lg bg-card">
               <img src={p.image} alt={p.name} width={768} height={1024} loading={i ? "lazy" : undefined} className="aspect-[3/4] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <span className="absolute left-3 top-3 rounded-full bg-background/70 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest backdrop-blur">{p.tag}</span>
-              {p.sizes.some((s) => s.stock === 0) && <span className="absolute right-3 top-3 rounded-full border border-destructive/50 bg-background/70 px-2.5 py-1 font-mono text-[10px] uppercase text-destructive backdrop-blur">Stock limité</span>}
+              <span className="absolute left-3 top-3 rounded-full bg-background/70 px-2.5 py-1 text-[11px] backdrop-blur">{p.tag}</span>
             </button>
             <div className="mt-4 flex items-start justify-between gap-3">
-              <div><h2 className="font-display text-lg">{p.name}</h2><p className="font-mono text-xs uppercase text-muted-foreground">Stretch {p.stretch}</p></div>
-              <p className="font-mono">{p.price} €</p>
+              <div><h2 className="font-display text-lg">{p.name}</h2><p className="text-xs capitalize text-muted-foreground">{p.gender}</p></div>
+              <p>{p.price} €</p>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button onClick={() => setActive(p)} className="rounded-md border border-border py-2.5 text-sm hover:bg-secondary">Fiche & taille</button>
-              <button onClick={() => setVto(p)} className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"><Sparkles className="h-4 w-4" />Essayer virtuellement</button>
-            </div>
+            <button onClick={() => setVto(p)} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"><Sparkles className="h-4 w-4" />Essayer virtuellement</button>
           </article>
         ))}
       </main>
 
-      <footer className="border-t border-border py-8 text-center font-mono text-xs text-muted-foreground">OmniFit AI — Hackathon YouCam Skin AI & eCommerce VTO</footer>
+      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">OmniFit AI — Hackathon YouCam Skin AI & eCommerce VTO</footer>
 
-      {active && <ProductSheet p={active} onClose={() => setActive(null)} onAdd={add} onTry={() => { setVto(active); setActive(null); }} />}
-      {vto && <VtoStudio p={vto} onClose={() => setVto(null)} />}
+      {vto && <VtoStudio p={vto} onClose={() => setVto(null)} onAdd={add} />}
       {b2b && <B2BModal onClose={() => setB2b(false)} />}
       <CartDrawer open={cartOpen} items={cart} setItems={setCart} onClose={() => setCartOpen(false)} />
     </div>
@@ -107,192 +108,124 @@ function Overlay({ onClose, children, side }: { onClose: () => void; children: R
   );
 }
 
-function ProductSheet({ p, onClose, onAdd, onTry }: { p: Product; onClose: () => void; onAdd: (p: Product, s: string) => void; onTry: () => void }) {
-  const [h, setH] = useState(178);
-  const [w, setW] = useState(72);
-  const [pref, setPref] = useState<FitPref>("standard");
-  const fit = useMemo(() => computeFit(p.sizes, p.stretch, h, w, pref), [p, h, w, pref]);
-  const rec = p.sizes.find((s) => s.size === fit.size);
-  const statusStyle = fit.status === "PERFECT_MATCH" ? "border-success/50 text-success" : fit.status === "SMART_ALTERNATIVE" ? "border-warning/50 text-warning" : "border-destructive/50 text-destructive";
-
-  return (
-    <Overlay onClose={onClose}>
-      <div className="grid md:grid-cols-[2fr_3fr]">
-        <img src={p.image} alt={p.name} width={768} height={1024} className="aspect-[3/4] w-full object-cover md:h-full" />
-        <div className="space-y-6 p-6">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-widest text-primary">{p.tag}</p>
-            <h2 className="font-display text-3xl">{p.name}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{p.material}</p>
-          </div>
-
-          <div>
-            <h3 className="mb-2 flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground"><Ruler className="h-3.5 w-3.5" />Guide des tailles (cm) · stretch {p.stretch}</h3>
-            <table className="w-full font-mono text-xs">
-              <thead className="text-muted-foreground"><tr className="border-b border-border"><th className="py-1.5 text-left">Taille</th><th>Épaules</th><th>Poitrine</th><th>Longueur</th><th className="text-right">Stock</th></tr></thead>
-              <tbody>{p.sizes.map((s) => (
-                <tr key={s.size} className={`border-b border-border/50 text-center ${s.size === fit.size ? "bg-primary/10" : ""}`}>
-                  <td className="py-1.5 text-left">{s.size}</td><td>{s.shoulders}</td><td>{s.chest}</td><td>{s.length}</td>
-                  <td className={`text-right ${s.stock ? "" : "text-destructive"}`}>{s.stock ? `${s.stock} pcs` : "Rupture"}</td>
-                </tr>))}</tbody>
-            </table>
-          </div>
-
-          <div className="rounded-lg border border-border p-4">
-            <h3 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">OmniFit Analytics · calculateur morphologique</h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="text-xs text-muted-foreground">Taille: <span className="font-mono text-foreground">{h} cm</span><input type="range" min={150} max={205} value={h} onChange={(e) => setH(+e.target.value)} className="mt-1 w-full accent-primary" /></label>
-              <label className="text-xs text-muted-foreground">Poids: <span className="font-mono text-foreground">{w} kg</span><input type="range" min={45} max={130} value={w} onChange={(e) => setW(+e.target.value)} className="mt-1 w-full accent-primary" /></label>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {(["ajustee", "standard", "oversize"] as FitPref[]).map((f) => (
-                <button key={f} onClick={() => setPref(f)} className={`rounded-md border py-2 text-xs capitalize ${pref === f ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground"}`}>{f === "ajustee" ? "Ajustée" : f}</button>
-              ))}
-            </div>
-
-            <div key={fit.status + fit.size} className={`mt-4 animate-in fade-in rounded-md border p-3 ${statusStyle}`}>
-              <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest">{fit.status === "PERFECT_MATCH" ? <Check className="h-4 w-4" /> : fit.status === "SMART_ALTERNATIVE" ? <Shuffle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}{fit.status}</p>
-              <p className="mt-1 text-sm text-foreground">
-                {fit.status === "PERFECT_MATCH" && `Taille ${fit.size} validée à ${fit.confidence}%, risque de retour estimé < ${fit.returnRisk}%`}
-                {fit.status === "SMART_ALTERNATIVE" && `Taille ${fit.idealSize} épuisée, recommandation ${fit.size} ${pref === "oversize" || fit.size! > fit.idealSize ? "plus ample" : ""} cohérente avec la coupe (${fit.confidence}%, risque ${fit.returnRisk}%)`}
-                {fit.status === "OUT_OF_STOCK" && `Taille idéale ${fit.idealSize} en rupture, aucune alternative fiable. Alerte de réassort recommandée.`}
-              </p>
-              <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-muted-foreground">{fit.explanation.map((e) => <li key={e}>→ {e}</li>)}</ul>
-            </div>
-
-            {rec && (
-              <div className="mt-4 space-y-2">
-                {[["Poitrine", fit.target.chest, rec.chest, 130], ["Épaules", Math.round(fit.target.shoulders), rec.shoulders, 60]].map(([l, t, v, max]) => (
-                  <div key={l as string} className="font-mono text-[11px]">
-                    <div className="flex justify-between text-muted-foreground"><span>{l}</span><span>cible {t} · produit {v} cm</span></div>
-                    <div className="relative mt-1 h-1.5 rounded-full bg-secondary">
-                      <div className="absolute h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${((v as number) / (max as number)) * 100}%` }} />
-                      <div className="absolute -top-1 h-3.5 w-0.5 bg-foreground transition-all duration-500" style={{ left: `${((t as number) / (max as number)) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button disabled={!fit.size} onClick={() => fit.size && onAdd(p, fit.size)} className="rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground disabled:opacity-40">{fit.size ? `Ajouter la taille ${fit.size} au panier` : "Indisponible"}</button>
-            <button onClick={onTry} className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border py-3 text-sm hover:bg-secondary"><Sparkles className="h-4 w-4" />Essayer virtuellement</button>
-          </div>
-        </div>
-      </div>
-    </Overlay>
-  );
-}
-
 async function toDataUrl(url: string): Promise<string> {
   if (url.startsWith("data:")) return url;
   const blob = await (await fetch(url)).blob();
   return await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
 }
 
-function VtoStudio({ p, onClose }: { p: Product; onClose: () => void }) {
-  const [src, setSrc] = useState<string>(modelImg);
+const STEPS = ["Préparation de la photo", "Envoi à YouCam", "L'IA habille la silhouette", "Finalisation du rendu"];
+
+function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onAdd: (p: Product, s: string) => void }) {
+  const defaultModel = p.gender === "femme" ? modelFemme : modelImg;
+  const [src, setSrc] = useState<string>(defaultModel);
   const [progress, setProgress] = useState(0);
-  const [done, setDone] = useState(false);
-  const [split, setSplit] = useState(50);
-  const [mode, setMode] = useState<"demo" | "api">("demo");
   const [result, setResult] = useState<string | null>(null);
-  const [live, setLive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [split, setSplit] = useState(50);
+  const [h, setH] = useState(p.gender === "femme" ? 166 : 178);
+  const [w, setW] = useState(p.gender === "femme" ? 58 : 72);
+  const [pref, setPref] = useState<FitPref>("standard");
+  const fit = useMemo(() => computeFit(p.sizes, p.stretch, h, w, pref), [p, h, w, pref]);
   const fileRef = useRef<HTMLInputElement>(null);
   const runId = useRef(0);
   const start = useServerFn(startYoucamCloth);
   const poll = useServerFn(pollYoucamCloth);
 
-  const simulate = async (id: number, fast: boolean) => {
-    const steps = fast ? 12 : 30;
-    for (let i = 1; i <= steps; i++) { await new Promise((r) => setTimeout(r, fast ? 40 : 70)); if (id !== runId.current) return; setProgress(Math.round((i / steps) * 100)); }
-    setMode("demo"); setDone(true);
-  };
-
-  const runLive = async (image: string) => {
+  const run = async (image: string) => {
     const id = ++runId.current;
-    setDone(false); setProgress(3); setResult(null);
+    setResult(null); setError(null); setProgress(5);
     try {
       const [person, garment] = await Promise.all([toDataUrl(image), toDataUrl(p.image)]);
-      setProgress(15);
-      const t = await start({ data: { person, garment } });
+      if (id !== runId.current) return;
+      setProgress(20);
+      const t = await start({ data: { person, garment, category: p.category } });
       if (!t.ok) throw new Error(t.error);
+      setProgress(35);
       for (let i = 0; i < 60; i++) {
         await new Promise((r) => setTimeout(r, 2000));
         if (id !== runId.current) return;
-        setProgress((v) => Math.min(95, v + 4));
+        setProgress((v) => Math.min(95, v + 3));
         const r = await poll({ data: { taskId: t.taskId } });
-        if (r.status === "success") { setResult(r.url); setMode("api"); setProgress(100); setDone(true); return; }
+        if (r.status === "success") { setResult(r.url); setProgress(100); return; }
         if (r.status === "error") throw new Error(r.error);
       }
       throw new Error("Délai dépassé");
     } catch (e) {
       if (id !== runId.current) return;
-      toast(`YouCam indisponible (${e instanceof Error ? e.message : "erreur"}) — simulation`);
-      setProgress(0); simulate(id, true);
+      setError(e instanceof Error ? e.message : "Erreur inconnue"); setProgress(0);
     }
   };
-
-  const run = (image: string, fast: boolean) => {
-    if (live) { void runLive(image); return; }
-    const id = ++runId.current; setDone(false); setProgress(0); setResult(null); simulate(id, fast);
-  };
-  useEffect(() => { run(modelImg, true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [p.id]);
+  useEffect(() => { void run(defaultModel); return () => { runId.current++; }; /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [p.id]);
 
   const onFile = (f?: File) => {
     if (!f) return;
     const r = new FileReader();
-    r.onload = () => { setSrc(r.result as string); run(r.result as string, false); };
+    r.onload = () => { setSrc(r.result as string); void run(r.result as string); };
     r.readAsDataURL(f);
   };
+  const busy = !result && !error;
+  const step = STEPS[Math.min(3, Math.floor(progress / 26))];
+  const statusText = fit.status === "PERFECT_MATCH" ? "Ajustement parfait" : fit.status === "SMART_ALTERNATIVE" ? `Taille ${fit.idealSize} épuisée, ${fit.size} vous ira bien` : "Votre taille est en rupture";
 
   return (
     <Overlay onClose={onClose}>
       <div className="grid md:grid-cols-[3fr_2fr]">
         <div className="relative aspect-[3/4] select-none overflow-hidden bg-background">
-          <img src={src} alt="Avant" className="absolute inset-0 h-full w-full object-cover" />
-          {done && (
-            <div className="absolute inset-0 animate-in fade-in duration-500" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
-              {result ? <img src={result} alt="Après — rendu YouCam" className="absolute inset-0 h-full w-full object-cover" /> : <>
-              <img src={src} alt="Après" className="absolute inset-0 h-full w-full object-cover" />
-              <img src={p.image} alt="" className="absolute left-1/2 top-[13%] w-[62%] -translate-x-1/2 mix-blend-lighten" style={{ maskImage: "radial-gradient(ellipse 55% 50% at 50% 45%, black 60%, transparent 100%)" }} /></>}
+          <img src={src} alt="Votre photo" className="absolute inset-0 h-full w-full object-cover" />
+          {result && <>
+            <div className="absolute inset-0 animate-in fade-in duration-700" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
+              <img src={result} alt={`Rendu YouCam — ${p.name}`} className="absolute inset-0 h-full w-full object-cover" />
             </div>
-          )}
-          {done && <>
             <div className="pointer-events-none absolute inset-y-0 w-px bg-foreground" style={{ left: `${split}%` }} />
             <input type="range" min={0} max={100} value={split} onChange={(e) => setSplit(+e.target.value)} aria-label="Comparer avant/après" className="absolute inset-x-0 bottom-4 mx-auto w-2/3 accent-primary" />
-            <span className="absolute left-3 top-3 rounded-full bg-background/70 px-2 py-1 font-mono text-[10px] uppercase">Avant</span>
-            <span className="absolute right-14 top-3 rounded-full bg-primary px-2 py-1 font-mono text-[10px] uppercase text-primary-foreground">Après</span>
+            <span className="absolute left-3 top-3 rounded-full bg-background/70 px-2 py-1 text-[11px]">Avant</span>
+            <span className="absolute right-14 top-3 rounded-full bg-primary px-2 py-1 text-[11px] text-primary-foreground">Après</span>
           </>}
-          {!done && (
+          {busy && (
             <div className="absolute inset-0 grid place-items-center bg-background/60">
-              <div className="absolute inset-x-0 h-0.5 bg-primary shadow-[0_0_20px_var(--primary)]" style={{ top: `${progress}%` }} />
+              <div className="absolute inset-x-0 h-0.5 bg-primary shadow-[0_0_20px_var(--primary)] transition-all duration-700" style={{ top: `${progress}%` }} />
               <div className="w-2/3 text-center">
-                <p className="font-mono text-xs uppercase tracking-widest text-primary">Scan morphologique {progress}%</p>
+                <p className="text-sm text-primary">{step}… {progress}%</p>
                 <div className="mt-2 h-1 rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} /></div>
+                <p className="mt-2 text-xs text-muted-foreground">Rendu IA réel · 20 à 60 s</p>
               </div>
+            </div>
+          )}
+          {error && (
+            <div className="absolute inset-0 grid place-items-center bg-background/80 p-6 text-center">
+              <div><AlertTriangle className="mx-auto h-6 w-6 text-destructive" /><p className="mt-2 text-sm">L'essayage a échoué : {error}</p>
+                <button onClick={() => run(src)} className="mt-3 rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary">Réessayer</button></div>
             </div>
           )}
         </div>
         <div className="space-y-5 p-6">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-widest text-primary">Studio VTO YouCam</p>
+            <p className="text-xs text-primary">Essayage virtuel YouCam</p>
             <h2 className="font-display text-2xl">{p.name}</h2>
-            <p className="mt-2 inline-flex rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase text-muted-foreground">{mode === "api" ? "Rendu YouCam réel" : "Aperçu simulé"}</p>
+            <p className="text-sm text-muted-foreground">{p.material} · {p.price} €</p>
           </div>
-          <div>
-            <p className="mb-2 text-xs text-muted-foreground">Modèle prédéfini</p>
-            <button onClick={() => { setSrc(modelImg); run(modelImg, true); }} className={`overflow-hidden rounded-md border-2 ${src === modelImg ? "border-primary" : "border-border"}`}><img src={modelImg} alt="Modèle" className="h-24 w-18 object-cover" /></button>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+          <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-primary/60 py-4 text-sm hover:bg-secondary"><Upload className="h-4 w-4" />Essayer sur ma propre photo</button>
+          {src !== defaultModel && <button onClick={() => { setSrc(defaultModel); void run(defaultModel); }} className="w-full text-xs text-muted-foreground underline">Revenir au mannequin</button>}
+
+          <div className="rounded-lg border border-border p-4">
+            <p className="text-sm">Votre taille recommandée</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="text-xs text-muted-foreground">Taille <span className="text-foreground">{h} cm</span><input type="range" min={150} max={205} value={h} onChange={(e) => setH(+e.target.value)} className="mt-1 w-full accent-primary" /></label>
+              <label className="text-xs text-muted-foreground">Poids <span className="text-foreground">{w} kg</span><input type="range" min={40} max={130} value={w} onChange={(e) => setW(+e.target.value)} className="mt-1 w-full accent-primary" /></label>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {(["ajustee", "standard", "oversize"] as FitPref[]).map((f) => (
+                <button key={f} onClick={() => setPref(f)} className={`rounded-md border py-1.5 text-xs capitalize ${pref === f ? "border-primary bg-primary/10" : "border-border text-muted-foreground"}`}>{f === "ajustee" ? "Ajustée" : f}</button>
+              ))}
+            </div>
+            <p className={`mt-3 flex items-center gap-2 text-sm ${fit.status === "PERFECT_MATCH" ? "text-success" : fit.status === "SMART_ALTERNATIVE" ? "text-warning" : "text-destructive"}`}>
+              {fit.status === "PERFECT_MATCH" ? <Check className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              {fit.size ? <><span className="font-display text-2xl text-foreground">{fit.size}</span>{statusText}</> : statusText}
+            </p>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-          <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border py-4 text-sm hover:bg-secondary"><Upload className="h-4 w-4" />Importer ma photo</button>
-          <label className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5 text-sm">
-            <span><span className="block">Rendu IA YouCam réel</span><span className="text-xs text-muted-foreground">20–60 s · sinon aperçu instantané</span></span>
-            <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} className="h-4 w-4 accent-primary" />
-          </label>
-          {live && <button onClick={() => runLive(src)} className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground">Lancer l'essayage réel</button>}
-          <p className="font-mono text-[10px] text-muted-foreground">Faites glisser le curseur pour comparer avant / après.</p>
+          <button disabled={!fit.size} onClick={() => fit.size && onAdd(p, fit.size)} className="w-full rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground disabled:opacity-40">{fit.size ? `Ajouter ma taille ${fit.size} au panier` : "Indisponible"}</button>
         </div>
       </div>
     </Overlay>
