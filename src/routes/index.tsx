@@ -67,17 +67,17 @@ function Index() {
           <div className="font-display text-2xl font-extrabold tracking-tight">
             OMNIFIT<span className="text-primary font-normal">.AI</span>
           </div>
-          <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
             <button 
               onClick={() => setB2b(true)} 
               className="hidden rounded-full border border-border/80 bg-white/60 px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground sm:inline-flex items-center gap-2 transition-all hover:border-primary/50 hover:bg-white shadow-sm"
             >
               <TrendingDown className="h-3.5 w-3.5 text-primary" />
-              Impact Marchand B2B
+              B2B Merchant Impact
             </button>
             <button 
               onClick={() => setCartOpen(true)} 
-              aria-label="Panier" 
+              aria-label="Shopping Cart" 
               className="relative rounded-full border border-border/80 bg-white/70 p-2.5 shadow-sm hover:bg-white transition-all"
             >
               <ShoppingBag className="h-4 w-4" />
@@ -91,32 +91,36 @@ function Index() {
         </div>
       </header>
 
-      {/* Bannière de présentation aérienne */}
+      {/* Banner */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-14 pb-10 sm:pt-20 sm:pb-14 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/60 bg-sky-100/70 px-4 py-1.5 text-xs text-sky-800 font-semibold mb-5 shadow-sm backdrop-blur-sm">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Moteur VTO YouCam API & Sizing Prédictif
+          YouCam AI VTO Engine & Biomechanical Sizing
         </div>
         <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl mx-auto leading-[1.08] text-slate-900">
-          La vérité morphologique avant l'achat.
+          The morphological truth before you buy.
         </h1>
         <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
-          Visualisez le vêtement sur votre silhouette grâce à l'IA YouCam et éliminez les erreurs de taille avec notre analyseur de tension biomécanique.
+          Experience realistic AI try-on powered by YouCam, and eliminate return guesswork with real-time textile tension analysis.
         </p>
 
-        {/* Filtres de genre en pilules */}
+        {/* Filter pills */}
         <div className="mt-8 flex justify-center gap-2.5">
-          {(["tous", "femme", "homme"] as const).map((g) => (
+          {[
+            { id: "tous", label: "All" },
+            { id: "femme", label: "Women" },
+            { id: "homme", label: "Men" },
+          ].map(({ id, label }) => (
             <button
-              key={g}
-              onClick={() => setFilter(g)}
+              key={id}
+              onClick={() => setFilter(id as any)}
               className={`rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-wider transition-all shadow-sm ${
-                filter === g 
+                filter === id 
                   ? "bg-primary text-primary-foreground font-bold shadow-md shadow-sky-500/25 scale-105" 
                   : "border border-border/80 bg-white/60 text-slate-600 hover:text-slate-900 hover:bg-white"
               }`}
             >
-              {g}
+              {label}
             </button>
           ))}
         </div>
