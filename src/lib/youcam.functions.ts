@@ -25,14 +25,14 @@ function key() {
 }
 
 export const startYoucamCloth = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ person: z.string().max(11_000_000), garment: z.string().max(11_000_000) }))
+  .inputValidator(z.object({ person: z.string().max(11_000_000), garment: z.string().max(11_000_000), category: z.enum(["upper_body","lower_body","full_body"]).default("upper_body") }))
   .handler(async ({ data }) => {
     try {
       const [src, ref] = await Promise.all([uploadDataUrl(data.person), uploadDataUrl(data.garment)]);
       const res = await fetch(API, {
         method: "POST",
         headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ src_file_url: src, ref_file_url: ref, garment_category: "upper_body" }),
+        body: JSON.stringify({ src_file_url: src, ref_file_url: ref, garment_category: data.category }),
       });
       const json = (await res.json().catch(() => ({}))) as { data?: { task_id?: string } };
       if (!res.ok || !json.data?.task_id) {
