@@ -235,7 +235,7 @@ function VtoStudio({ p, onClose }: { p: Product; onClose: () => void }) {
   };
 
   const run = (image: string, fast: boolean) => {
-    if (live) return runLive(image);
+    if (live) { void runLive(image); return; }
     const id = ++runId.current; setDone(false); setProgress(0); setResult(null); simulate(id, fast);
   };
   useEffect(() => { run(modelImg, true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [p.id]);

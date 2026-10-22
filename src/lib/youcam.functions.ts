@@ -5,12 +5,13 @@ const API = "https://yce-api-01.perfectcorp.com/s2s/v2.0/task/cloth";
 
 async function uploadDataUrl(dataUrl: string): Promise<string> {
   const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(dataUrl);
-  if (!m) throw new Error("Format d'image invalide");
+  if (!m || !m[1] || !m[2]) throw new Error("Format d'image invalide");
+  const mime = m[1];
   const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
-  const ext = m[1].split("/")[1];
+  const ext = mime.split("/")[1] ?? "jpg";
   const path = `${crypto.randomUUID()}.${ext}`;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const up = await supabaseAdmin.storage.from("vto").upload(path, bytes, { contentType: m[1] });
+  const up = await supabaseAdmin.storage.from("vto").upload(path, bytes, { contentType: mime });
   if (up.error) throw new Error("Upload impossible");
   const signed = await supabaseAdmin.storage.from("vto").createSignedUrl(path, 3600);
   if (signed.error || !signed.data) throw new Error("URL signée impossible");
