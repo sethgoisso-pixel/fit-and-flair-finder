@@ -381,5 +381,244 @@ function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onA
                     key={s.size}
                     disabled={s.stock === 0}
                     onClick={() => setSelectedSize(s.size)}
-                    className={`relative rounded-lg border py-2 text-center text-xs transition-all ${
-                      i
+                                        className={`relative rounded-lg border py-2 text-center text-xs transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border text-foreground hover:bg-secondary/50"
+                    } ${s.stock === 0 ? "opacity-35 cursor-not-allowed" : ""}`}
+                  >
+                    <div className="font-bold">{s.size}</div>
+                    <div className="text-[10px] text-muted-foreground">{s.stock > 0 ? `${s.stock} dispo` : "Épuisé"}</div>
+                    {isRec && (
+                      <span className="absolute -top-1.5 -right-1 rounded-full bg-primary px-1 text-[9px] text-primary-foreground font-mono">
+                        Idéal
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Diagnostic de coupe dynamique */}
+            <div className={`p-3 rounded-lg border text-xs ${
+              tension.status === "optimal" 
+                ? "border-success/30 bg-success/5 text-success" 
+                : tension.status === "tight" 
+                ? "border-destructive/30 bg-destructive/5 text-destructive" 
+                : "border-warning/30 bg-warning/5 text-warning"
+            }`}>
+              <div className="font-semibold flex items-center gap-1.5">
+                {tension.status === "optimal" ? <Check className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                {tension.label}
+              </div>
+              <p className="text-[11px] opacity-90 mt-1">
+                {tension.status === "optimal" 
+                  ? `Parfait pour une coupe ${pref}. Le vêtement s'adapte à votre morphologie sans tension excessive.`
+                  : tension.status === "tight"
+                  ? `Le vêtement risque d'être trop ajusté aux épaules et de tirer au buste.`
+                  : `Le tissu aura une aisance marquée par rapport à votre préférence.`}
+              </p>
+            </div>
+          </div>
+
+          {/* Bouton d'ajout au panier */}
+          <button
+            disabled={!selectedSize && !fit.size}
+            onClick={() => {
+              const targetSize = selectedSize || fit.size;
+              if (targetSize) {
+                add(p, targetSize, tension.returnRisk);
+                onClose();
+              }
+            }}
+            className="w-full rounded-xl bg-primary py-3.5 text-center text-xs font-semibold text-primary-foreground tracking-wide hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Ajouter la taille {selectedSize || fit.size || "recommandée"} au panier
+          </button>
+        </div>
+      </div>
+    </Overlay>
+  );
+}
+
+// -------------------------------------------------------------
+// TIROIR PANIER & CALCUL D'IMPACT ANTI-RETOURS
+// -------------------------------------------------------------
+function CartDrawer({
+  cart,
+  onClose,
+  onRemove,
+  onCheckout,
+}: {
+  cart: CartItem[];
+  onClose: () => void;
+  onRemove: (id: string, size: string) => void;
+  onCheckout: () => void;
+}) {
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const avgRisk = cart.length ? Math.round(cart.reduce((s, i) => s + i.returnRisk, 0) / cart.length) : 0;
+  const co2Saved = (cart.length * 3.4).toFixed(1);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-background/80 backdrop-blur-sm animate-in fade-in">
+      <div className="relative flex h-full w-full max-w-md flex-col bg-card border-l border-border p-6 shadow-2xl">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-5 w-5 text-primary" />
+            <h3 className="font-display text-lg">Mon Panier</h3>
+          </div>
+          <button onClick={onClose} className="rounded-full p-1 text-muted-foreground hover:bg-secondary">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Badge d'impact positif */}
+        {cart.length > 0 && (
+          <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs space-y-1.5">
+            <div className="flex items-center justify-between font-medium text-primary">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" />
+                Garantie Coupe OmniFit
+              </span>
+              <span className="font-mono">Risque : {avgRisk}%</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Leaf className="h-3 w-3 text-success inline" />
+              Taille validée par l'algorithme : ~{co2Saved} kg de CO₂ de transport évités.
+            </p>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto py-4 space-y-3">
+          {cart.length === 0 ? (
+            <div className="py-20 text-center text-sm text-muted-foreground">
+              Votre panier est vide.
+            </div>
+          ) : (
+            cart.map((item) => (
+              <div key={`${item.id}-${item.size}`} className="flex items-center gap-3 rounded-lg border border-border p-3 bg-background/50">
+                <img src={item.image} alt={item.name} className="h-16 w-12 rounded object-cover" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-semibold truncate">{item.name}</h4>
+                  <p className="text-[11px] text-muted-foreground">Taille : <span className="font-mono text-primary font-bold">{item.size}</span></p>
+                  <p className="text-xs font-mono font-medium mt-1">{item.price} €</p>
+                </div>
+                <button onClick={() => onRemove(item.id, item.size)} className="text-muted-foreground hover:text-destructive p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="border-t border-border pt-4 space-y-3">
+          <div className="flex items-center justify-between text-sm font-medium">
+            <span>Total estimé</span>
+            <span className="font-mono text-lg font-bold">{total} €</span>
+          </div>
+          <button
+            disabled={cart.length === 0}
+            onClick={onCheckout}
+            className="w-full rounded-xl bg-primary py-3.5 text-xs font-semibold text-primary-foreground tracking-wide hover:brightness-110 transition-all disabled:opacity-40"
+          >
+            Passer la commande
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// MODALE B2B : SIMULATEUR DE RETOURS POUR LE JURY
+// -------------------------------------------------------------
+function B2BModal({ onClose }: { onClose: () => void }) {
+  const [orders, setOrders] = useState(5000);
+  const aov = 85; // Panier moyen en €
+  const baseReturnRate = 0.32; // Taux de retour moyen textile (32%)
+  const omnifitReturnRate = 0.11; // Taux de retour avec OmniFit (11%)
+  
+  const savedReturns = Math.round(orders * (baseReturnRate - omnifitReturnRate));
+  const logisticsSaved = savedReturns * 14.5; // Coût moyen d'un retour (14,50 €)
+  const co2SavedTonnes = ((savedReturns * 3.4) / 1000).toFixed(1);
+
+  return (
+    <Overlay onClose={onClose}>
+      <div className="p-6 sm:p-8 space-y-6 max-w-xl mx-auto">
+        <div>
+          <div className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-primary">
+            <TrendingDown className="h-4 w-4" />
+            Merchant ROI Calculator
+          </div>
+          <h2 className="font-display text-2xl mt-1">Impact Financier OmniFit</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Modèle de rentabilité pour les marques e-commerce de mode intégrant le VTO biométrique.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card/60 p-4 space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Volume de commandes mensuelles</span>
+            <span className="font-mono font-bold text-primary">{orders.toLocaleString()} commandes/mois</span>
+          </div>
+          <input 
+            type="range" 
+            min={1000} 
+            max={50000} 
+            step={1000} 
+            value={orders} 
+            onChange={(e) => setOrders(+e.target.value)} 
+            className="w-full accent-primary" 
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-xl border border-border p-3.5 bg-background">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-primary">-{Math.round((baseReturnRate - omnifitReturnRate) * 100)}%</div>
+            <div className="text-[11px] text-muted-foreground mt-1">Taux de retours</div>
+          </div>
+          <div className="rounded-xl border border-border p-3.5 bg-background">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-success">+{Math.round(logisticsSaved).toLocaleString()} €</div>
+            <div className="text-[11px] text-muted-foreground mt-1">Économies logistique</div>
+          </div>
+          <div className="rounded-xl border border-border p-3.5 bg-background">
+            <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">{co2SavedTonnes} t</div>
+            <div className="text-[11px] text-muted-foreground mt-1">CO₂ non émis</div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground space-y-1">
+          <p className="font-semibold text-foreground">Pourquoi ce chiffre convainc les marques ?</p>
+          <p>
+            En mode en ligne, 70 % des retours sont dus à une incertitude de taille. En combinant l'essayage visuel YouCam et l'algorithme morphologique en amont du panier, OmniFit supprime l'achat multi-tailles.
+          </p>
+        </div>
+
+        <button onClick={onClose} className="w-full rounded-xl bg-secondary py-3 text-xs font-semibold text-foreground hover:bg-secondary/80">
+          Fermer le simulateur
+        </button>
+      </div>
+    </Overlay>
+  );
+}
+
+// -------------------------------------------------------------
+// COMPOSANT OVERLAY (MODALE UNIFIÉE)
+// -------------------------------------------------------------
+function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-background/85 backdrop-blur-md animate-in fade-in overflow-y-auto">
+      <div className="relative w-full max-w-4xl rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto">
+        <button
+          onClick={onClose}
+          aria-label="Fermer"
+          className="absolute right-4 top-4 z-20 rounded-full border border-border bg-background/80 p-2 text-muted-foreground hover:text-foreground backdrop-blur"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
