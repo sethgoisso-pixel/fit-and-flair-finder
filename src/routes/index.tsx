@@ -30,7 +30,7 @@ type CartItem = { id: string; name: string; size: string; price: number; image: 
 
 function Index() {
   const [filter, setFilter] = useState<"tous" | "femme" | "homme">("tous");
-  const [vto, setVto] = useState<Product | null>(null);
+  const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [b2b, setB2b] = useState(false);
@@ -46,9 +46,16 @@ function Index() {
   };
   const count = cart.reduce((s, i) => s + i.qty, 0);
 
+  const filtered = PRODUCTS.filter((p) => {
+    if (filter === "femme") return p.gender === "femme";
+    if (filter === "homme") return p.gender === "homme";
+    return true;
+  });
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      {/* Barre de navigation haute */}
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <div className="font-display text-xl tracking-tight">OMNIFIT<span className="text-primary">.AI</span></div>
           <div className="flex items-center gap-2">
@@ -61,160 +68,194 @@ function Index() {
             </button>
             <button onClick={() => setCartOpen(true)} aria-label="Panier" className="relative rounded-full border border-border p-2 hover:bg-secondary">
               <ShoppingBag className="h-4 w-4" />
-              {count > 0 && <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-primary font-mono text-[10px] text-primary-foreground font-semibold">{count}</span>}
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                  {count}
+                </span>
+              )}
             </button>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-5 pb-10 pt-14 sm:pt-20">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-primary">
-          <Sparkles className="h-3 w-3" />
-          YouCam VTO Real AI × Biométrie Prédictive
+      {/* Bannière de présentation */}
+      <section className="mx-auto max-w-7xl px-5 pt-12 pb-8 sm:pt-16 sm:pb-12 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs text-primary font-mono mb-4">
+          <Sparkles className="h-3.5 w-3.5" />
+          Moteur VTO YouCam API & Sizing Prédictif
         </div>
-        <h1 className="mt-4 max-w-4xl font-display text-4xl font-normal leading-[1.05] sm:text-6xl md:text-7xl">
-          Essayez en IA.<br /><em className="text-muted-foreground">Ne retournez plus jamais.</em>
+        <h1 className="font-display text-4xl sm:text-6xl font-light tracking-tight max-w-3xl mx-auto leading-tight">
+          La vérité morphologique avant l'achat.
         </h1>
-        <p className="mt-5 max-w-xl text-base text-muted-foreground leading-relaxed">
-          La première technologie d'essayage virtuel qui couple le rendu photoréaliste YouCam à la physique de tension du tissu pour anéantir les retours de taille.
+        <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto font-light">
+          Visualisez le vêtement sur votre silhouette grâce à l'IA YouCam et éliminez les erreurs de taille avec notre analyseur de tension biomécanique.
         </p>
-        <button onClick={() => setB2b(true)} className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:hidden">
-          <TrendingDown className="h-3.5 w-3.5 text-primary" />Simulateur B2B
-        </button>
+
+        {/* Filtres de genre */}
+        <div className="mt-8 flex justify-center gap-2">
+          {(["tous", "femme", "homme"] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => setFilter(g)}
+              className={`rounded-full px-4 py-1.5 text-xs font-mono uppercase tracking-wider transition-all ${
+                filter === g ? "bg-primary text-primary-foreground font-medium shadow-md shadow-primary/20" : "border border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
       </section>
 
-      <div className="mx-auto flex max-w-7xl gap-2 px-5 pb-6">
-        {(["tous", "femme", "homme"] as const).map((g) => (
-          <button 
-            key={g} 
-            onClick={() => setFilter(g)} 
-            className={`rounded-full border px-4 py-1.5 text-sm capitalize transition-all ${
-              filter === g ? "border-primary bg-primary text-primary-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {g}
-          </button>
-        ))}
-      </div>
-
-      <main className="mx-auto grid max-w-7xl gap-6 px-5 pb-24 sm:grid-cols-2 lg:grid-cols-3">
-        {PRODUCTS.filter((p) => filter === "tous" || p.gender === filter).map((p, i) => (
-          <article key={p.id} className="group animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-xl border border-border/60 bg-card/40 p-3 hover:border-primary/40 transition-all">
-            <button onClick={() => setVto(p)} className="relative block w-full overflow-hidden rounded-lg bg-card">
-              <img src={p.image} alt={p.name} width={768} height={1024} loading={i ? "lazy" : undefined} className="aspect-[3/4] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[11px] backdrop-blur font-mono">{p.tag}</span>
-            </button>
-            <div className="mt-3 flex items-start justify-between gap-3 px-1">
-              <div>
-                <h2 className="font-display text-lg">{p.name}</h2>
-                <p className="text-xs text-muted-foreground capitalize">{p.gender} · {p.material}</p>
+      {/* Grille de produits */}
+      <main className="mx-auto max-w-7xl px-5 pb-24">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((p) => (
+            <div key={p.id} className="group relative flex flex-col rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all duration-300">
+              <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+                <img src={p.image} alt={p.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground backdrop-blur">
+                  {p.gender} · {p.category.replace("_", " ")}
+                </span>
+                <span className="absolute right-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-xs font-mono font-medium backdrop-blur">
+                  {p.price} €
+                </span>
               </div>
-              <p className="font-mono text-base font-medium">{p.price} €</p>
+
+              <div className="flex flex-1 flex-col p-5">
+                <h3 className="font-display text-lg tracking-tight">{p.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground font-light">{p.description}</p>
+
+                <div className="mt-auto pt-5">
+                  <button
+                    onClick={() => setActiveProduct(p)}
+                    className="w-full rounded-xl bg-primary py-3 text-xs font-semibold text-primary-foreground tracking-wide hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/10"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Essayer virtuellement
+                  </button>
+                </div>
+              </div>
             </div>
-            <button 
-              onClick={() => setVto(p)} 
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:opacity-95 transition-opacity"
-            >
-              <Sparkles className="h-4 w-4" />
-              Essayer virtuellement
-            </button>
-          </article>
-        ))}
+          ))}
+        </div>
       </main>
 
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        OmniFit AI — Concours Officiel YouCam Skin AI & eCommerce VTO
-      </footer>
+      {/* Modale Studio VTO */}
+      {activeProduct && (
+        <VtoStudio p={activeProduct} onClose={() => setActiveProduct(null)} add={add} />
+      )}
 
-      {vto && <VtoStudio p={vto} onClose={() => setVto(null)} onAdd={add} />}
+      {/* Panier latéral */}
+      {cartOpen && (
+        <CartDrawer
+          cart={cart}
+          onClose={() => setCartOpen(false)}
+          onRemove={(id, size) => setCart((c) => c.filter((i) => !(i.id === id && i.size === size)))}
+          onCheckout={() => {
+            toast.success("Commande simulée avec succès ! Merci pour votre achat.");
+            setCart([]);
+            setCartOpen(false);
+          }}
+        />
+      )}
+
+      {/* Modale d'impact B2B */}
       {b2b && <B2BModal onClose={() => setB2b(false)} />}
-      <CartDrawer open={cartOpen} items={cart} setItems={setCart} onClose={() => setCartOpen(false)} />
     </div>
   );
 }
 
-function Overlay({ onClose, children, side }: { onClose: () => void; children: React.ReactNode; side?: boolean }) {
-  useEffect(() => { 
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose(); 
-    window.addEventListener("keydown", h); 
-    return () => window.removeEventListener("keydown", h); 
-  }, [onClose]);
+const STEPS = [
+  "Préparation de la silhouette",
+  "Transmission aux serveurs YouCam",
+  "L'IA ajuste le textile",
+  "Finalisation du rendu HD",
+];
 
-  return (
-    <div className="fixed inset-0 z-50 flex animate-in fade-in duration-200" role="dialog">
-      <div className="absolute inset-0 bg-background/75 backdrop-blur-sm" onClick={onClose} />
-      <div className={side ? "relative ml-auto h-full w-full max-w-md animate-in slide-in-from-right duration-300 border-l border-border bg-card" : "relative m-auto max-h-[92vh] w-[calc(100%-1.5rem)] max-w-5xl overflow-y-auto animate-in zoom-in-95 duration-300 rounded-xl border border-border bg-card shadow-2xl"}>
-        <button onClick={onClose} aria-label="Fermer" className="absolute right-3 top-3 z-20 rounded-full bg-background/80 p-2 hover:bg-secondary border border-border">
-          <X className="h-4 w-4" />
-        </button>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-async function toDataUrl(url: string): Promise<string> {
-  if (url.startsWith("data:")) return url;
-  const blob = await (await fetch(url)).blob();
-  return await new Promise((res) => { 
-    const r = new FileReader(); 
-    r.onload = () => res(r.result as string); 
-    r.readAsDataURL(blob); 
-  });
-}
-
-const STEPS = ["Analyse de la posture", "Connexion sécurisée YouCam", "L'IA habille la silhouette", "Finalisation du rendu HD"];
-
-function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onAdd: (p: Product, s: string, risk: number) => void }) {
+function VtoStudio({
+  p,
+  onClose,
+  add,
+}: {
+  p: Product;
+  onClose: () => void;
+  add: (p: Product, size: string, risk?: number) => void;
+}) {
   const defaultModel = p.gender === "femme" ? modelFemme : modelImg;
-  const [src, setSrc] = useState<string>(defaultModel);
-  const [progress, setProgress] = useState(0);
+  const [src, setSrc] = useState(defaultModel);
   const [result, setResult] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [split, setSplit] = useState(50);
-  const [h, setH] = useState(p.gender === "femme" ? 166 : 178);
-  const [w, setW] = useState(p.gender === "femme" ? 58 : 72);
-  const [pref, setPref] = useState<FitPref>("standard");
-  
-  const fit = useMemo(() => computeFit(p.sizes, p.stretch, h, w, pref), [p, h, w, pref]);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  // Synchronise la taille sélectionnée avec la recommandation au calcul
-  useEffect(() => {
-    if (fit.size) setSelectedSize(fit.size);
-  }, [fit.size]);
-
-  // Analyse de tension dynamique pour la taille couramment inspectée
-  const currentSpec = p.sizes.find((s) => s.size === (selectedSize || fit.size || p.sizes[0].size)) || p.sizes[0];
-  const tension = useMemo(() => analyzeTension(currentSpec, p.stretch, h, w, pref), [currentSpec, p.stretch, h, w, pref]);
-
   const fileRef = useRef<HTMLInputElement>(null);
   const runId = useRef(0);
-  const start = useServerFn(startYoucamCloth);
-  const poll = useServerFn(pollYoucamCloth);
 
-  const run = async (image: string) => {
+  // Mensurations interactives
+  const [h, setH] = useState(p.gender === "femme" ? 170 : 182);
+  const [w, setW] = useState(p.gender === "femme" ? 58 : 76);
+  const [pref, setPref] = useState<FitPref>("standard");
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+
+  // Calculs morphologiques & tension
+  const fit = useMemo(() => computeFit(p.sizes, p.stretch, h, w, pref), [p, h, w, pref]);
+  const activeSizeSpec = useMemo(() => {
+    const targetSize = selectedSize || fit.size || p.sizes[0].size;
+    return p.sizes.find((s) => s.size === targetSize) || p.sizes[0];
+  }, [p, selectedSize, fit.size]);
+
+  const tension = useMemo(
+    () => analyzeTension(activeSizeSpec, p.stretch, h, w, pref),
+    [activeSizeSpec, p.stretch, h, w, pref]
+  );
+
+  const startFn = useServerFn(startYoucamCloth);
+  const pollFn = useServerFn(pollYoucamCloth);
+
+  const run = async (modelDataUrl: string) => {
     const id = ++runId.current;
-    setResult(null); setError(null); setProgress(5);
+    setError(null);
+    setResult(null);
+    setProgress(5);
+
     try {
-      const [person, garment] = await Promise.all([toDataUrl(image), toDataUrl(p.image)]);
+      const { taskId } = await startFn({
+        data: {
+          modelImage: modelDataUrl,
+          garmentImage: p.image,
+          garmentCategory: p.category,
+        },
+      });
+
       if (id !== runId.current) return;
       setProgress(20);
-      const t = await start({ data: { person, garment, category: p.category } });
-      if (!t.ok) throw new Error(t.error);
-      setProgress(35);
-      for (let i = 0; i < 60; i++) {
-        await new Promise((r) => setTimeout(r, 2000));
-        if (id !== runId.current) return;
-        setProgress((v) => Math.min(95, v + 3));
-        const r = await poll({ data: { taskId: t.taskId } });
-        if (r.status === "success") { setResult(r.url); setProgress(100); return; }
-        if (r.status === "error") throw new Error(r.error);
-      }
-      throw new Error("Délai de traitement dépassé");
-    } catch (e) {
-      if (id !== runId.current) return;
-      setError(e instanceof Error ? e.message : "Erreur de connexion"); setProgress(0);
+
+      const t0 = Date.now();
+      const interval = setInterval(async () => {
+        if (id !== runId.current) {
+          clearInterval(interval);
+          return;
+        }
+        const elapsed = (Date.now() - t0) / 1000;
+        setProgress(Math.min(95, Math.round(20 + elapsed * 2.5)));
+
+        try {
+          const res = await pollFn({ data: { taskId } });
+          if (res.status === "success" && res.resultUrl) {
+            clearInterval(interval);
+            setProgress(100);
+            setResult(res.resultUrl);
+          } else if (res.status === "error") {
+            clearInterval(interval);
+            setError(res.error || "Le moteur YouCam a rencontré une erreur.");
+          }
+        } catch (e: any) {
+          clearInterval(interval);
+          setError(e?.message || "Impossible de contacter l'API YouCam.");
+        }
+      }, 2000);
+    } catch (e: any) {
+      setError(e?.message || "Erreur de configuration YouCam.");
     }
   };
 
@@ -247,7 +288,7 @@ function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onA
   return (
     <Overlay onClose={onClose}>
       <div className="grid md:grid-cols-[1.1fr_1fr]">
-        {/* Colonne Gauche : Miroir YouCam avec curseur avant/après */}
+        {/* Miroir YouCam avec curseur avant/après */}
         <div className="relative aspect-[3/4] select-none overflow-hidden bg-background">
           <img src={src} alt="Votre silhouette" className="absolute inset-0 h-full w-full object-cover" />
           
@@ -305,7 +346,7 @@ function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onA
           )}
         </div>
 
-        {/* Colonne Droite : Moteur Biologique OmniFit */}
+        {/* Moteur Biologique & Analyseur de Tension */}
         <div className="space-y-4 p-5 sm:p-6 overflow-y-auto max-h-[85vh]">
           <div>
             <div className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-primary">
@@ -359,8 +400,7 @@ function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onA
               ))}
             </div>
           </div>
-
-          {/* Sélecteur de taille & Analyse de Tension */}
+                {/* Sélecteur de taille & Analyse de Tension */}
           <div className="rounded-xl border border-border bg-card/60 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground font-mono">Test de Taille & Tension</span>
@@ -381,7 +421,7 @@ function VtoStudio({ p, onClose, onAdd }: { p: Product; onClose: () => void; onA
                     key={s.size}
                     disabled={s.stock === 0}
                     onClick={() => setSelectedSize(s.size)}
-                                        className={`relative rounded-lg border py-2 text-center text-xs transition-all ${
+                    className={`relative rounded-lg border py-2 text-center text-xs transition-all ${
                       isSelected
                         ? "border-primary bg-primary/10 text-primary font-medium"
                         : "border-border text-foreground hover:bg-secondary/50"
@@ -535,12 +575,12 @@ function CartDrawer({
 // -------------------------------------------------------------
 function B2BModal({ onClose }: { onClose: () => void }) {
   const [orders, setOrders] = useState(5000);
-  const aov = 85; // Panier moyen en €
-  const baseReturnRate = 0.32; // Taux de retour moyen textile (32%)
-  const omnifitReturnRate = 0.11; // Taux de retour avec OmniFit (11%)
+  const aov = 85;
+  const baseReturnRate = 0.32;
+  const omnifitReturnRate = 0.11;
   
   const savedReturns = Math.round(orders * (baseReturnRate - omnifitReturnRate));
-  const logisticsSaved = savedReturns * 14.5; // Coût moyen d'un retour (14,50 €)
+  const logisticsSaved = savedReturns * 14.5;
   const co2SavedTonnes = ((savedReturns * 3.4) / 1000).toFixed(1);
 
   return (
