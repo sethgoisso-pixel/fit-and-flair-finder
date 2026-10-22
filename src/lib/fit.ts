@@ -5,7 +5,7 @@ export type SizeSpec = { size: string; shoulders: number; chest: number; length:
 export const EASE: Record<FitPref, number> = { ajustee: 4, standard: 8, oversize: 14 };
 export const STRETCH_TOL: Record<Stretch, number> = { faible: 2, moyen: 4, eleve: 6 };
 
-// Estimation biométrique basée sur taille et poids
+// Biometric estimate based on height and weight
 export function estimateBody(heightCm: number, weightKg: number) {
   return {
     chest: Math.round(0.35 * heightCm + 0.45 * weightKg),
@@ -27,7 +27,7 @@ export type FitResult = {
 
 export type TensionAnalysis = {
   size: string;
-  chestDiff: number; // Différence entre mesure vêtement et corps
+  chestDiff: number; // Difference between garment and body measurement
   easeTarget: number;
   status: "optimal" | "tight" | "loose";
   label: string;
@@ -35,7 +35,7 @@ export type TensionAnalysis = {
   stock: number;
 };
 
-// Évalue une taille spécifique par rapport à la silhouette
+// Evaluates a specific size against the body profile
 export function analyzeTension(
   spec: SizeSpec,
   stretch: Stretch,
@@ -103,8 +103,8 @@ export function computeFit(
     .sort((a, b) => b.sc - a.sc);
   const ideal = ranked[0]!;
   const explanation = [
-    `Poitrine estimée ${body.chest} cm + aisance ${pref} ${EASE[pref]} cm = cible ${target.chest} cm`,
-    `Épaules estimées ${body.shoulders} cm, tolérance stretch ${stretch} ±${tol} cm`,
+    `Estimated chest ${body.chest} cm + ease ${pref} ${EASE[pref]} cm = cible ${target.chest} cm`,
+    `Estimated shoulders ${body.shoulders} cm, stretch tolerance ${stretch} ±${tol} cm`,
   ];
   const risk = (sc: number) => Math.max(1, Math.round((100 - sc) / 3));
 
@@ -117,7 +117,7 @@ export function computeFit(
       returnRisk: risk(ideal.sc),
       body,
       target,
-      explanation: [...explanation, `Taille ${ideal.s.size} en stock (${ideal.s.stock} pcs)`],
+      explanation: [...explanation, `Size ${ideal.s.size} in stock (${ideal.s.stock} units)`],
     };
   }
   const alt = ranked.find((r) => r.s.stock > 0 && r.sc >= 65);
@@ -132,7 +132,7 @@ export function computeFit(
       target,
       explanation: [
         ...explanation,
-        `Taille ${ideal.s.size} ${ideal.s.stock === 0 ? "épuisée" : "hors tolérance"} → ${alt.s.size} reste dans la tolérance de coupe`,
+        `Taille ${ideal.s.size} ${ideal.s.stock === 0 ? "out of stock" : "outside tolerance"} → ${alt.s.size} is within the fit tolerance`,
       ],
     };
   }
@@ -144,6 +144,6 @@ export function computeFit(
     returnRisk: risk(ideal.sc),
     body,
     target,
-    explanation: [...explanation, `Aucune taille cohérente disponible en stock`],
+    explanation: [...explanation, `No suitable size is currently in stock`],
   };
 }
