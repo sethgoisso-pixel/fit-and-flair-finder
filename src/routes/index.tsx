@@ -212,24 +212,48 @@ function VtoStudio({
   const startFn = useServerFn(startYoucamCloth);
   const pollFn = useServerFn(pollYoucamCloth);
 
-  const run = async (modelDataUrl: string) => {
+    // Convertit n'importe quel chemin d'image en Data URL base64
+  const toDataUrl = async (url: string): Promise<string> => {
+    if (url.startsWith("data:")) return url;
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const run = async (modelImgUrl: string) => {
     const id = ++runId.current;
     setError(null);
     setResult(null);
     setProgress(5);
 
     try {
-      const { taskId } = await startFn({
+      setProgress(15);
+      const [person, garment] = await Promise.all([
+        toDataUrl(modelImgUrl),
+        toDataUrl(p.image),
+      ]);
+
+      const res = await startFn({
         data: {
-          modelImage: modelDataUrl,
-          garmentImage: p.image,
-          garmentCategory: p.category,
+          person,
+          garment,
+          category: p.category,
         },
       });
 
-      if (id !== runId.current) return;
-      setProgress(20);
+      if (!res.ok || !res.taskId) {
+        throw new Error(res.error || "Impossible d'initier la tâche YouCam");
+      }
 
+      if (id !== runId.current) return;
+      setProgress(25);
+
+      const taskId = res.taskId;
       const t0 = Date.now();
       const interval = setInterval(async () => {
         if (id !== runId.current) {
@@ -237,17 +261,17 @@ function VtoStudio({
           return;
         }
         const elapsed = (Date.now() - t0) / 1000;
-        setProgress(Math.min(95, Math.round(20 + elapsed * 2.5)));
+        setProgress(Math.min(95, Math.round(25 + elapsed * 2.5)));
 
         try {
-          const res = await pollFn({ data: { taskId } });
-          if (res.status === "success" && res.resultUrl) {
+          const poll = await pollFn({ data: { taskId } });
+          if (poll.status === "success" && poll.url) {
             clearInterval(interval);
             setProgress(100);
-            setResult(res.resultUrl);
-          } else if (res.status === "error") {
+            setResult(poll.url);
+          } else if (poll.status === "error") {
             clearInterval(interval);
-            setError(res.error || "Le moteur YouCam a rencontré une erreur.");
+            setError(poll.error || "Le moteur YouCam a rencontré une erreur.");
           }
         } catch (e: any) {
           clearInterval(interval);
