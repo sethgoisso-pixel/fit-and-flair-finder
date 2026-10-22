@@ -1,10 +1,11 @@
+import { useServerFn } from "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ShoppingBag, Sparkles, X, Upload, KeyRound, TrendingDown, Ruler, Check, AlertTriangle, Shuffle } from "lucide-react";
+import { ShoppingBag, Sparkles, X, Upload, TrendingDown, Ruler, Check, AlertTriangle, Shuffle } from "lucide-react";
 import { PRODUCTS, type Product } from "@/lib/products";
 import { computeFit, type FitPref } from "@/lib/fit";
-import { runYoucamCloth } from "@/lib/youcam.functions";
+import { startYoucamCloth, pollYoucamCloth } from "@/lib/youcam.functions";
 import modelImg from "@/assets/model.jpg";
 
 export const Route = createFileRoute("/")({
@@ -28,10 +29,7 @@ function Index() {
   const [vto, setVto] = useState<Product | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [keyOpen, setKeyOpen] = useState(false);
   const [b2b, setB2b] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  useEffect(() => setApiKey(localStorage.getItem("youcam_key") ?? ""), []);
 
   const add = (p: Product, size: string) => {
     setCart((c) => {
@@ -51,7 +49,6 @@ function Index() {
           <div className="font-display text-xl tracking-tight">OMNIFIT<span className="text-primary">.AI</span></div>
           <div className="flex items-center gap-2">
             <button onClick={() => setB2b(true)} className="hidden rounded-full border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground sm:inline-flex items-center gap-1.5"><TrendingDown className="h-3.5 w-3.5 text-primary" />B2B Merchant Impact</button>
-            <button onClick={() => setKeyOpen(true)} aria-label="Clé API YouCam" className="rounded-full border border-border p-2 hover:bg-secondary"><KeyRound className="h-4 w-4" /></button>
             <button onClick={() => setCartOpen(true)} aria-label="Panier" className="relative rounded-full border border-border p-2 hover:bg-secondary">
               <ShoppingBag className="h-4 w-4" />
               {count > 0 && <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-primary font-mono text-[10px] text-primary-foreground">{count}</span>}
@@ -90,8 +87,7 @@ function Index() {
       <footer className="border-t border-border py-8 text-center font-mono text-xs text-muted-foreground">OmniFit AI — Hackathon YouCam Skin AI & eCommerce VTO</footer>
 
       {active && <ProductSheet p={active} onClose={() => setActive(null)} onAdd={add} onTry={() => { setVto(active); setActive(null); }} />}
-      {vto && <VtoStudio p={vto} apiKey={apiKey} onClose={() => setVto(null)} onKey={() => setKeyOpen(true)} />}
-      {keyOpen && <KeyModal value={apiKey} onClose={() => setKeyOpen(false)} onSave={(k) => { setApiKey(k); localStorage.setItem("youcam_key", k); setKeyOpen(false); toast(k ? "Clé YouCam enregistrée" : "Mode simulation activé"); }} />}
+      {vto && <VtoStudio p={vto} onClose={() => setVto(null)} />}
       {b2b && <B2BModal onClose={() => setB2b(false)} />}
       <CartDrawer open={cartOpen} items={cart} setItems={setCart} onClose={() => setCartOpen(false)} />
     </div>
@@ -189,23 +185,58 @@ function ProductSheet({ p, onClose, onAdd, onTry }: { p: Product; onClose: () =>
   );
 }
 
-function VtoStudio({ p, apiKey, onClose, onKey }: { p: Product; apiKey: string; onClose: () => void; onKey: () => void }) {
+async function toDataUrl(url: string): Promise<string> {
+  if (url.startsWith("data:")) return url;
+  const blob = await (await fetch(url)).blob();
+  return await new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+}
+
+function VtoStudio({ p, onClose }: { p: Product; onClose: () => void }) {
   const [src, setSrc] = useState<string>(modelImg);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [split, setSplit] = useState(50);
   const [mode, setMode] = useState<"demo" | "api">("demo");
+  const [result, setResult] = useState<string | null>(null);
+  const [live, setLive] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const runId = useRef(0);
+  const start = useServerFn(startYoucamCloth);
+  const poll = useServerFn(pollYoucamCloth);
 
-  const run = async (image: string, fast: boolean) => {
-    setDone(false); setProgress(0);
-    let apiOk = false;
-    const apiCall = apiKey ? runYoucamCloth({ data: { apiKey, srcUrl: image.startsWith("data:") ? image : location.origin + image, refUrl: location.origin + p.image } }).then((r) => { apiOk = r.ok; if (!r.ok) toast(`YouCam API (${r.status}) indisponible — bascule en simulation`); }).catch(() => toast("YouCam API injoignable — simulation")) : Promise.resolve();
+  const simulate = async (id: number, fast: boolean) => {
     const steps = fast ? 12 : 30;
-    for (let i = 1; i <= steps; i++) { await new Promise((r) => setTimeout(r, fast ? 40 : 70)); setProgress(Math.round((i / steps) * 100)); }
-    await apiCall;
-    setMode(apiOk ? "api" : "demo");
-    setDone(true);
+    for (let i = 1; i <= steps; i++) { await new Promise((r) => setTimeout(r, fast ? 40 : 70)); if (id !== runId.current) return; setProgress(Math.round((i / steps) * 100)); }
+    setMode("demo"); setDone(true);
+  };
+
+  const runLive = async (image: string) => {
+    const id = ++runId.current;
+    setDone(false); setProgress(3); setResult(null);
+    try {
+      const [person, garment] = await Promise.all([toDataUrl(image), toDataUrl(p.image)]);
+      setProgress(15);
+      const t = await start({ data: { person, garment } });
+      if (!t.ok) throw new Error(t.error);
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        if (id !== runId.current) return;
+        setProgress((v) => Math.min(95, v + 4));
+        const r = await poll({ data: { taskId: t.taskId } });
+        if (r.status === "success") { setResult(r.url); setMode("api"); setProgress(100); setDone(true); return; }
+        if (r.status === "error") throw new Error(r.error);
+      }
+      throw new Error("Délai dépassé");
+    } catch (e) {
+      if (id !== runId.current) return;
+      toast(`YouCam indisponible (${e instanceof Error ? e.message : "erreur"}) — simulation`);
+      setProgress(0); simulate(id, true);
+    }
+  };
+
+  const run = (image: string, fast: boolean) => {
+    if (live) return runLive(image);
+    const id = ++runId.current; setDone(false); setProgress(0); setResult(null); simulate(id, fast);
   };
   useEffect(() => { run(modelImg, true); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [p.id]);
 
@@ -223,8 +254,9 @@ function VtoStudio({ p, apiKey, onClose, onKey }: { p: Product; apiKey: string; 
           <img src={src} alt="Avant" className="absolute inset-0 h-full w-full object-cover" />
           {done && (
             <div className="absolute inset-0 animate-in fade-in duration-500" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
+              {result ? <img src={result} alt="Après — rendu YouCam" className="absolute inset-0 h-full w-full object-cover" /> : <>
               <img src={src} alt="Après" className="absolute inset-0 h-full w-full object-cover" />
-              <img src={p.image} alt="" className="absolute left-1/2 top-[13%] w-[62%] -translate-x-1/2 mix-blend-lighten" style={{ maskImage: "radial-gradient(ellipse 55% 50% at 50% 45%, black 60%, transparent 100%)" }} />
+              <img src={p.image} alt="" className="absolute left-1/2 top-[13%] w-[62%] -translate-x-1/2 mix-blend-lighten" style={{ maskImage: "radial-gradient(ellipse 55% 50% at 50% 45%, black 60%, transparent 100%)" }} /></>}
             </div>
           )}
           {done && <>
@@ -247,7 +279,7 @@ function VtoStudio({ p, apiKey, onClose, onKey }: { p: Product; apiKey: string; 
           <div>
             <p className="font-mono text-[11px] uppercase tracking-widest text-primary">Studio VTO YouCam</p>
             <h2 className="font-display text-2xl">{p.name}</h2>
-            <p className="mt-2 inline-flex rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase text-muted-foreground">{mode === "api" ? "YouCam API · live" : apiKey ? "Clé fournie · simulation de secours" : "Mode démo · simulation"}</p>
+            <p className="mt-2 inline-flex rounded-full border border-border px-2.5 py-1 font-mono text-[10px] uppercase text-muted-foreground">{mode === "api" ? "Rendu YouCam réel" : "Aperçu simulé"}</p>
           </div>
           <div>
             <p className="mb-2 text-xs text-muted-foreground">Modèle prédéfini</p>
@@ -255,25 +287,12 @@ function VtoStudio({ p, apiKey, onClose, onKey }: { p: Product; apiKey: string; 
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
           <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border py-4 text-sm hover:bg-secondary"><Upload className="h-4 w-4" />Importer ma photo</button>
-          <button onClick={onKey} className="flex w-full items-center justify-center gap-2 rounded-md border border-border py-2.5 text-xs text-muted-foreground hover:text-foreground"><KeyRound className="h-3.5 w-3.5" />Configurer la clé API YouCam</button>
+          <label className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5 text-sm">
+            <span><span className="block">Rendu IA YouCam réel</span><span className="text-xs text-muted-foreground">20–60 s · sinon aperçu instantané</span></span>
+            <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} className="h-4 w-4 accent-primary" />
+          </label>
+          {live && <button onClick={() => runLive(src)} className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground">Lancer l'essayage réel</button>}
           <p className="font-mono text-[10px] text-muted-foreground">Faites glisser le curseur pour comparer avant / après.</p>
-        </div>
-      </div>
-    </Overlay>
-  );
-}
-
-function KeyModal({ value, onClose, onSave }: { value: string; onClose: () => void; onSave: (k: string) => void }) {
-  const [k, setK] = useState(value);
-  return (
-    <Overlay onClose={onClose}>
-      <div className="max-w-md space-y-4 p-6">
-        <h2 className="font-display text-2xl">Clé API YouCam</h2>
-        <p className="text-sm text-muted-foreground">Utilisée pour appeler <code className="font-mono text-xs text-foreground">POST /s2s/v2.0/task/cloth</code>. Sans clé, une simulation réaliste prend le relais automatiquement. La clé reste stockée dans votre navigateur.</p>
-        <input type="password" value={k} onChange={(e) => setK(e.target.value)} placeholder="sk-youcam-..." className="w-full rounded-md border border-input bg-background px-3 py-2.5 font-mono text-sm outline-none focus:border-primary" />
-        <div className="flex gap-2">
-          <button onClick={() => onSave(k.trim())} className="flex-1 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground">Enregistrer</button>
-          <button onClick={() => onSave("")} className="flex-1 rounded-md border border-border py-2.5 text-sm">Mode simulation</button>
         </div>
       </div>
     </Overlay>
