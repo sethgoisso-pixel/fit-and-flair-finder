@@ -14,13 +14,13 @@ async function uploadDataUrl(dataUrl: string): Promise<string> {
   const up = await supabaseAdmin.storage.from("vto").upload(path, bytes, { contentType: mime });
   if (up.error) throw new Error("Upload impossible");
   const signed = await supabaseAdmin.storage.from("vto").createSignedUrl(path, 3600);
-  if (signed.error || !signed.data) throw new Error("URL signée impossible");
+  if (signed.error || !signed.data) throw new Error("Unable to generate signed URL");
   return signed.data.signedUrl;
 }
 
 function key() {
   const k = process.env["YOUCAM_API_KEY"];
-  if (!k) throw new Error("Clé YouCam absente");
+  if (!k) throw new Error("YouCam API key is missing");
   return k;
 }
 
@@ -37,12 +37,12 @@ export const startYoucamCloth = createServerFn({ method: "POST" })
       const json = (await res.json().catch(() => ({}))) as { data?: { task_id?: string } };
       if (!res.ok || !json.data?.task_id) {
         console.error("YouCam create failed", res.status, JSON.stringify(json).slice(0, 500));
-        return { ok: false as const, error: `YouCam a refusé la requête (${res.status})` };
+        return { ok: false as const, error: `YouCam rejected the request (${res.status})` };
       }
       return { ok: true as const, taskId: json.data.task_id };
     } catch (e) {
       console.error("YouCam create error", e);
-      return { ok: false as const, error: e instanceof Error ? e.message : "Erreur réseau" };
+      return { ok: false as const, error: e instanceof Error ? e.message : "Network error" };
     }
   });
 
@@ -62,6 +62,6 @@ export const pollYoucamCloth = createServerFn({ method: "POST" })
       }
       return { status: "running" as const };
     } catch (e) {
-      return { status: "error" as const, error: e instanceof Error ? e.message : "Erreur réseau" };
+      return { status: "error" as const, error: e instanceof Error ? e.message : "Network error" };
     }
   });

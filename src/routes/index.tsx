@@ -345,7 +345,7 @@ function VtoStudio({
           {result && (
             <>
               <div className="absolute inset-0 animate-in fade-in duration-700" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
-                <img src={result} alt={`Rendu YouCam — ${p.name}`} className="absolute inset-0 h-full w-full object-cover" />
+                <img src={result} alt={`YouCam AI render — ${p.name}`} className="absolute inset-0 h-full w-full object-cover" />
               </div>
               <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-primary shadow-lg" style={{ left: `${split}%` }} />
               <input 
@@ -358,7 +358,7 @@ function VtoStudio({
                 className="absolute inset-x-0 bottom-4 mx-auto w-3/4 accent-primary z-10" 
               />
               <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[11px] backdrop-blur font-mono">Before</span>
-              <span className="absolute right-14 top-3 rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground font-mono font-medium shadow">IA YouCam</span>
+              <span className="absolute right-14 top-3 rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground font-mono font-medium shadow">YouCam AI</span>
 
               <button 
                 onClick={downloadLook} 
@@ -569,7 +569,7 @@ function CartDrawer({
             <div className="flex items-center justify-between font-medium text-primary">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4" />
-                Garantie Coupe OmniFit
+                OmniFit Fit Guarantee
               </span>
               <span className="font-mono">Risk: {avgRisk}%</span>
             </div>
@@ -612,7 +612,7 @@ function CartDrawer({
             onClick={onCheckout}
             className="w-full rounded-xl bg-primary py-3.5 text-xs font-semibold text-primary-foreground tracking-wide hover:brightness-110 transition-all disabled:opacity-40"
           >
-            Passer la commande
+            Proceed to Checkout
           </button>
         </div>
       </div>
@@ -686,7 +686,7 @@ function B2BModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <button onClick={onClose} className="w-full rounded-xl bg-secondary py-3 text-xs font-semibold text-foreground hover:bg-secondary/80">
-          Close le simulateur
+          Close Calculator
         </button>
       </div>
     </Overlay>

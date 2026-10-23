@@ -1,52 +1,63 @@
-# Fit And Flair Finder
+# OmniFit AI — Virtual Try-On & Biomechanical Sizing Engine
 
-Créer l'application e-commerce de mode OmniFit AI pour le hackathon YouCam API Skin AI & eCommerce VTO.
+> **Submitted to the YouCam API Skin AI & eCommerce VTO Hackathon (Perfect Corp.)**
+> Stopping fashion's 38% return rate by merging YouCam's AI Cloth VTO with a real-time biomechanical tension engine and merchant ROI intelligence.
 
-Design & UI/UX :
-- Style sombre haut de gamme, minimaliste et percutant (esthétique Nike Lab / Zara Studio / luxury fashion tech).
-- Typographie soignée, badges discrets, animations fluides, totalement responsive mobile et desktop.
+**Live Demo**: https://omnifit-ai.lovable.app
 
-Fonctionnalités clés :
-1. Catalogue e-commerce :
-- Fiches de vêtements tendance (ex: Veste Cyber-Tech Denim, Bomber Minimaliste, Trench Techwear) avec photos élégantes.
-- Fiches techniques complètes pour chaque article : guide des tailles en cm (épaules, poitrine, longueur), coefficient d'élasticité (stretch faible/moyen/élevé) et inventaire par taille (avec certaines tailles volontairement en rupture de stock pour la démo).
+---
 
-2. Studio d'essayage virtuel YouCam (VTO) :
-- Bouton "Essayer virtuellement" sur chaque produit.
-- Mode Démo instantané ultra-fluide avec modèles prédéfinis et comparaison avant/après réaliste.
-- Upload de photo utilisateur avec barre de progression de scan.
-- Modal de configuration pour renseigner une clé API YouCam réelle (appel POST /s2s/v2.0/task/cloth), avec bascule transparente vers une simulation réaliste si aucune clé n'est fournie.
+## Problem
 
-3. Calculateur Morphologique & Moteur "OmniFit Analytics" (Anti-Retour) :
-- Formulaire morphologique rapide en 3 clics : Taille (cm), Poids (kg), Coupe souhaitée (Ajustée / Standard / Oversize).
-- Algorithme transparent et explicable qui croise morphologie, tolérance de coupe du vêtement et stocks réels.
-- Affichage du statut : PERFECT_MATCH (ex: "Taille M validée à 95%, risque de retour estimé < 2%"), SMART_ALTERNATIVE (ex: "Taille M épuisée, recommandation L oversize cohérente avec la coupe"), ou alerte de rupture.
-- Comparatif visuel clair des mesures recommandées vs produit.
+Online fashion faces a multi-billion-dollar reverse logistics crisis:
 
-4. Expérience d'achat & Valeur B2B :
-- Bouton d'action direct "Ajouter la taille recommandée au panier".
-- Tiroir panier interactif fonctionnel.
-- Petit onglet discret ou badge "B2B Merchant Impact" montrant les bénéfices pour la marque : taux de retour diminué de 38%, économies logistiques estimées.
+- Over **38% of apparel bought online is returned**, mostly because of sizing uncertainty.
+- Shoppers practice **"bracket shopping"**: they order S, M and L, then return two.
+- Most virtual try-on tools are visual stickers: they show the garment, but cannot tell whether the fabric pulls at the shoulders or squeezes the chest.
 
-This project was built with [Lovable](https://lovable.dev).
+## Solution
 
-**Live app**: https://fit-and-flair-finder.lovable.app
+OmniFit turns virtual try-on into an actionable, low-risk purchase decision.
 
-## Build with Lovable
+1. **Photorealistic VTO powered by YouCam AI Cloth v2**
+   - Live server-side integration with the YouCam `task/cloth` API (async task + polling).
+   - Before/after comparison slider and HD look download.
+   - Works on curated women's and men's models or on the shopper's own photo.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b47f71b4-1041-4283-8b96-5e0a9d1fc3b7).
+2. **Real-time biomechanical tension engine**
+   - 3-click body profile: height (cm), weight (kg), fit preference (Fitted / Regular / Oversized).
+   - Computes body measurements, target ease and fabric stretch tolerance per size.
+   - Live return-risk score: low for an optimal drape, high under fabric tension.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+3. **B2B merchant ROI calculator**
+   - Models the return-rate drop from 32% to 11%.
+   - Logistics savings (EUR 14.50 per avoided return) and CO2 prevented (3.4 kg per avoided parcel).
 
-## Development
+4. **Frictionless checkout**
+   - One-click "Add recommended size to cart".
+   - Cart with OmniFit Fit Guarantee and CO2 impact.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Tech Stack
+
+- **AI Virtual Try-On**: Perfect Corp. YouCam AI Cloth v2 API
+- **Framework**: TanStack Start (React 19, server functions)
+- **Styling**: Tailwind CSS v4, Lucide icons
+- **Backend**: Lovable Cloud (server functions keep YouCam credentials private, image storage)
+- **Language**: TypeScript
+
+## Local Development
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+bun install
+bun dev
 ```
+
+Then open http://localhost:8080.
+
+## Author
+
+- **Seth Goisso**
+- Built for the YouCam API Skin AI & eCommerce VTO Hackathon on Devpost, powered by Perfect Corp. YouCam APIs.
+- Built with [Lovable](https://lovable.dev).
