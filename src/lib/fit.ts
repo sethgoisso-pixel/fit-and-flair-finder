@@ -132,7 +132,7 @@ export function computeFit(
       target,
       explanation: [
         ...explanation,
-        `Taille ${ideal.s.size} ${ideal.s.stock === 0 ? "out of stock" : "outside tolerance"} → ${alt.s.size} is within the fit tolerance`,
+        `Size ${ideal.s.size} ${ideal.s.stock === 0 ? "out of stock" : "outside tolerance"} → ${alt.s.size} is within the fit tolerance`,
       ],
     };
   }
