@@ -150,7 +150,7 @@ function Index() {
 
               <div className="flex flex-1 flex-col p-4 pt-5">
                 <h3 className="font-display text-xl font-bold tracking-tight text-slate-900">{p.name}</h3>
-                <p className="mt-1.5 text-xs text-slate-500 font-normal leading-relaxed">{p.description}</p>
+                <p className="mt-1.5 text-xs text-slate-500 font-normal leading-relaxed">{p.material}</p>
 
                 <div className="mt-auto pt-6">
                   <button
@@ -226,8 +226,8 @@ function VtoStudio({
   // Calculs morphologiques & tension
   const fit = useMemo(() => computeFit(p.sizes, p.stretch, h, w, pref), [p, h, w, pref]);
   const activeSizeSpec = useMemo(() => {
-    const targetSize = selectedSize || fit.size || p.sizes[0].size;
-    return p.sizes.find((s) => s.size === targetSize) || p.sizes[0];
+    const targetSize = selectedSize || fit.size || p.sizes[0]!.size;
+    return p.sizes.find((s) => s.size === targetSize) ?? p.sizes[0]!;
   }, [p, selectedSize, fit.size]);
 
   const tension = useMemo(
