@@ -53,6 +53,8 @@ cd <repository-name>
 bun install
 bun dev
 ```
+## Limitations
+The fit engine is a heuristic model built from simple textile ease rules; its risk scores are estimates, not validated return rates. The merchant figures (return-rate drop, EUR 14.50 per avoided return, 3.4 kg CO2 per parcel) are editable assumptions that illustrate the ROI, not measured results. Try-on quality depends on the photo and the YouCam API. Built with AI-assisted tools (Lovable, Claude); I tested the results and corrected issues myself.
 
 Then open http://localhost:8080.
 
