@@ -1,65 +1,110 @@
 # OmniFit AI — Virtual Try-On & Biomechanical Sizing Engine
 
 > **Submitted to the YouCam API Skin AI & eCommerce VTO Hackathon (Perfect Corp.)**
-> Stopping fashion's 38% return rate by merging YouCam's AI Cloth VTO with a real-time biomechanical tension engine and merchant ROI intelligence.
+> Fewer sizing returns by pairing YouCam's AI Cloth virtual try-on with a transparent fit-risk engine and a merchant ROI calculator.
 
-**Live Demo**: https://omnifit-ai.lovable.app
+**Live demo:** https://omnifit-ai.lovable.app
 
 ---
 
 ## Problem
 
-Online fashion faces a multi-billion-dollar reverse logistics crisis:
+Online fashion has a costly returns problem, and sizing uncertainty is a major cause:
 
-- Over **38% of apparel bought online is returned**, mostly because of sizing uncertainty.
+- A widely cited industry estimate puts apparel returns bought online at around **38%**.
 - Shoppers practice **"bracket shopping"**: they order S, M and L, then return two.
-- Most virtual try-on tools are visual stickers: they show the garment, but cannot tell whether the fabric pulls at the shoulders or squeezes the chest.
+- Most virtual try-on tools are visual stickers: they show the garment but cannot say whether the fabric will pull at the shoulders or squeeze the chest.
 
 ## Solution
 
-OmniFit turns virtual try-on into an actionable, low-risk purchase decision.
+OmniFit turns virtual try-on into a purchase decision.
 
-1. **Photorealistic VTO powered by YouCam AI Cloth v2**
-   - Live server-side integration with the YouCam `task/cloth` API (async task + polling).
-   - Before/after comparison slider and HD look download.
-   - Works on curated women's and men's models or on the shopper's own photo.
+1. **Photorealistic try-on with YouCam AI Cloth**
+   - Server-side integration with the YouCam `task/cloth` API (create a task, then poll until it succeeds).
+   - Before/after comparison slider and download of the result.
+   - Works with curated model photos or with the shopper's own photo.
+2. **Fit-risk engine (heuristic)**
+   - Three inputs: height (cm), weight (kg), fit preference (Fitted / Regular / Oversized).
+   - Estimates chest, shoulders and length from height and weight, adds a target ease (4, 8 or 14 cm) and compares them with each size's garment measurements and the fabric stretch tolerance (2, 4 or 6 cm).
+   - Returns one of three outcomes: perfect match, smart alternative (an in-stock neighbouring size) or out of stock, with a confidence value, a return-risk score and a plain-language explanation.
+3. **Merchant ROI calculator**
+   - Illustrates the effect of a lower return rate on logistics cost and CO2.
+   - The figures are editable assumptions (see Limitations), not measurements.
+4. **Simple checkout flow**
+   - "Add recommended size to cart", with the fit guarantee and CO2 impact shown in the cart.
 
-2. **Real-time biomechanical tension engine**
-   - 3-click body profile: height (cm), weight (kg), fit preference (Fitted / Regular / Oversized).
-   - Computes body measurements, target ease and fabric stretch tolerance per size.
-   - Live return-risk score: low for an optimal drape, high under fabric tension.
+## How the try-on works
 
-3. **B2B merchant ROI calculator**
-   - Models the return-rate drop from 32% to 11%.
-   - Logistics savings (EUR 14.50 per avoided return) and CO2 prevented (3.4 kg per avoided parcel).
+```
+Browser ──(photo + garment as data URLs)──▶ server function startYoucamCloth
+        ◀────────────── taskId ───────────────  │
+                                                 ├─ stores both images in a private Supabase bucket ("vto")
+                                                 ├─ creates 1-hour signed URLs
+                                                 └─ POST https://yce-api-01.perfectcorp.com/s2s/v2.0/task/cloth
+Browser ──(taskId, polling)──▶ server function pollYoucamCloth ──▶ GET .../task/cloth/{taskId}
+        ◀────── status: running | success (result URL) | error ──────
+```
 
-4. **Frictionless checkout**
-   - One-click "Add recommended size to cart".
-   - Cart with OmniFit Fit Guarantee and CO2 impact.
+The YouCam key is read only on the server. It never reaches the browser.
 
-## Tech Stack
+## Tech stack
 
-- **AI Virtual Try-On**: Perfect Corp. YouCam AI Cloth v2 API
-- **Framework**: TanStack Start (React 19, server functions)
-- **Styling**: Tailwind CSS v4, Lucide icons
-- **Backend**: Lovable Cloud (server functions keep YouCam credentials private, image storage)
-- **Language**: TypeScript
+- **Virtual try-on:** Perfect Corp. YouCam AI Cloth API
+- **Framework:** TanStack Start (React 19, server functions)
+- **Styling:** Tailwind CSS v4, Lucide icons
+- **Backend:** Lovable Cloud (Supabase): server functions and private image storage
+- **Language:** TypeScript
+- **Tests:** Vitest
 
-## Local Development
+## Run it yourself
+
+Requirements: [Bun](https://bun.sh) (or Node 22+), a Supabase project, and a YouCam API key.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
+git clone https://github.com/sethgoisso-pixel/fit-and-flair-finder
+cd fit-and-flair-finder
 bun install
-bun dev
 ```
-Then open http://localhost:8080.
+
+1. In your Supabase project, create a **private storage bucket named `vto`**.
+2. Create a `.env.local` file in the project root (never commit it) with:
+
+| Variable | Used for | Where |
+|---|---|---|
+| `YOUCAM_API_KEY` | YouCam API authentication | server only |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Supabase client | server |
+| `SUPABASE_SERVICE_ROLE_KEY` | Uploading images to the `vto` bucket | server only, secret |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase client | browser (public values) |
+
+3. Start the app and run the tests:
+
+```sh
+bun dev        # then open http://localhost:8080
+bun run test   # unit tests for the fit engine and routing
+```
+
+On Lovable Cloud, the same values are project secrets. The repository's `.env` file contains only public Supabase values.
+
+## Data handling
+
+- Only the photos the shopper chooses to upload are sent, together with a garment image.
+- Images are stored in a **private** bucket under random file names and reached through **signed links that expire after 1 hour**.
+- **This prototype does not delete uploaded images automatically.** Before any production use I would add a retention policy and a deletion job, plus explicit consent text.
+- No personal data other than the photo and the height/weight values typed in the profile.
 
 ## Limitations
-The fit engine is a heuristic model built from simple textile ease rules; its risk scores are estimates, not validated return rates. The merchant figures (return-rate drop, EUR 14.50 per avoided return, 3.4 kg CO2 per parcel) are editable assumptions that illustrate the ROI, not measured results. Try-on quality depends on the photo and the YouCam API. Built with AI-assisted tools (Lovable, Claude); I tested the results and corrected issues myself.
+
+- The fit engine is a **heuristic** built from simple textile ease rules. The body estimate from height and weight is deliberately crude. Its risk scores are estimates, not validated return rates.
+- The merchant figures (return-rate drop, EUR 14.50 per avoided return, 3.4 kg CO2 per avoided parcel) are **editable assumptions** that illustrate the ROI, not measured results.
+- Try-on quality depends on the photo and on the YouCam API. Results can take a few seconds to a few tens of seconds.
+- The demo catalog is small and hand-made.
 
 ## Author
 
 - **Seth Goisso**
 - Built for the YouCam API Skin AI & eCommerce VTO Hackathon on Devpost, powered by Perfect Corp. YouCam APIs.
-- Built with [Lovable](https://lovable.dev).
+- Built with [Lovable](https://lovable.dev), with AI-assisted development (Lovable, Claude). I tested the results and corrected issues myself.
+
+## License
+
+MIT, see [LICENSE](./LICENSE).
