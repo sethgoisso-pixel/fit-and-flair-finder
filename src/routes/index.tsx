@@ -199,6 +199,9 @@ const STEPS = [
   "Finalizing HD rendering",
 ];
 
+const HISTORY_KEY = "omnifit-looks-history";
+type LookEntry = { url: string; productId: string; name: string; date: number };
+
 function VtoStudio({
   p,
   onClose,
@@ -214,6 +217,10 @@ function VtoStudio({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [split, setSplit] = useState(50);
+  const [history, setHistory] = useState<LookEntry[]>([]);
+  useEffect(() => {
+    try { setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")); } catch {}
+  }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const runId = useRef(0);
 
@@ -321,15 +328,41 @@ function VtoStudio({
     r.readAsDataURL(f);
   };
 
-  const downloadLook = () => {
+  // Save successful renders to a local history
+  useEffect(() => {
     if (!result) return;
-    const a = document.createElement("a");
-    a.href = result;
-    a.download = `omnifit-${p.id}-look.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success("Look image downloaded!");
+    setHistory((prev) => {
+      if (prev.some((h) => h.url === result)) return prev;
+      const next = [{ url: result, productId: p.id, name: p.name, date: Date.now() }, ...prev].slice(0, 12);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [result]);
+
+  const downloadLook = async (url = result) => {
+    if (!url) return;
+    const filename = `omnifit-${p.id}-look.jpg`;
+    try {
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (nav.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        await nav.share({ files: [file], title: "OmniFit look" });
+        return;
+      }
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objUrl), 2000);
+      toast.success("Look image downloaded!");
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      toast.error("Download failed. Long-press the image to save it.");
+    }
   };
 
   const busy = !result && !error;
@@ -344,24 +377,26 @@ function VtoStudio({
           
           {result && (
             <>
-              <div className="absolute inset-0 animate-in fade-in duration-700" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
+              <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
                 <img src={result} alt={`YouCam AI render — ${p.name}`} className="absolute inset-0 h-full w-full object-cover" />
               </div>
-              <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-primary shadow-lg" style={{ left: `${split}%` }} />
+              <div className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-primary shadow-lg" style={{ left: `${split}%` }} />
               <input 
                 type="range" 
                 min={0} 
                 max={100} 
+                step={0.1}
                 value={split} 
                 onChange={(e) => setSplit(+e.target.value)} 
+                onInput={(e) => setSplit(+(e.target as HTMLInputElement).value)}
                 aria-label="Before-and-after comparison slider" 
-                className="absolute inset-x-0 bottom-4 mx-auto w-3/4 accent-primary z-10" 
+                className="absolute inset-x-0 bottom-4 m-0 w-full accent-primary z-10 touch-none" 
               />
               <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[11px] backdrop-blur font-mono">Before</span>
               <span className="absolute right-14 top-3 rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground font-mono font-medium shadow">YouCam AI</span>
 
               <button 
-                onClick={downloadLook} 
+                onClick={() => downloadLook()} 
                 className="absolute bottom-12 right-3 z-10 rounded-full bg-background/80 p-2.5 text-foreground hover:bg-secondary border border-border backdrop-blur"
                 title="Download image"
               >
@@ -416,6 +451,24 @@ function VtoStudio({
             <button onClick={() => { setSrc(defaultModel); void run(defaultModel); }} className="w-full text-center text-xs text-muted-foreground underline">
               Return to default model
             </button>
+          )}
+
+          {history.length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">My looks history</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {history.map((h) => (
+                  <button
+                    key={h.url}
+                    onClick={() => { setResult(h.url); setError(null); setProgress(100); }}
+                    title={`${h.name} · ${new Date(h.date).toLocaleDateString()}`}
+                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-md border ${result === h.url ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
+                  >
+                    <img src={h.url} alt={h.name} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Morphologie interactive */}
