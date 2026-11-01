@@ -199,6 +199,9 @@ const STEPS = [
   "Finalizing HD rendering",
 ];
 
+const HISTORY_KEY = "omnifit-looks-history";
+type LookEntry = { url: string; productId: string; name: string; date: number };
+
 function VtoStudio({
   p,
   onClose,
@@ -448,6 +451,24 @@ function VtoStudio({
             <button onClick={() => { setSrc(defaultModel); void run(defaultModel); }} className="w-full text-center text-xs text-muted-foreground underline">
               Return to default model
             </button>
+          )}
+
+          {history.length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">My looks history</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {history.map((h) => (
+                  <button
+                    key={h.url}
+                    onClick={() => { setResult(h.url); setError(null); setProgress(100); }}
+                    title={`${h.name} · ${new Date(h.date).toLocaleDateString()}`}
+                    className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-md border ${result === h.url ? "border-primary ring-2 ring-primary/40" : "border-border"}`}
+                  >
+                    <img src={h.url} alt={h.name} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Morphologie interactive */}
