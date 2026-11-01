@@ -3,7 +3,7 @@ import bomber from "@/assets/bomber.jpg";
 import trench from "@/assets/trench.jpg";
 import robe from "@/assets/robe.jpg";
 import jupe from "@/assets/jupe.jpg";
-import pantalon from "@/assets/pantalon.jpg";
+import pantalon from "@/assets/short.jpg";
 import type { SizeSpec, Stretch } from "./fit";
 
 export type Gender = "homme" | "femme";
@@ -67,7 +67,7 @@ export const PRODUCTS: Product[] = [
   },
   { 
     id: "pantalon", 
-    name: "Techwear Cargo Pants", 
+    name: "Techwear Cargo Shorts", 
     tag: "New", 
     price: 139, 
     image: pantalon, 
