@@ -393,7 +393,7 @@ function VtoStudio({
               <span className="absolute right-14 top-3 rounded-full bg-primary px-2.5 py-1 text-[11px] text-primary-foreground font-mono font-medium shadow">YouCam AI</span>
 
               <button 
-                onClick={downloadLook} 
+                onClick={() => downloadLook()} 
                 className="absolute bottom-12 right-3 z-10 rounded-full bg-background/80 p-2.5 text-foreground hover:bg-secondary border border-border backdrop-blur"
                 title="Download image"
               >
